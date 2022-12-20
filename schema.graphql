@@ -1,0 +1,24 @@
+type Delegate @entity {
+  id: ID!
+  accountId: String! @index(unique: true)
+  aggregate: DelegateAggregate!
+  delegations: [Delegation]! @derivedFrom(field: "delegate")
+}
+
+type DelegateAggregate @jsonField {
+  delegatorVotes: BigInt!
+  delegators: Int!
+}
+
+type Delegation @entity {
+  id: ID!
+  delegate: Delegate!
+  delegator: String!
+  delegatation: ConvictionVote!
+  trackId: Int!
+}
+
+type ConvictionVote @jsonField {
+  conviction: String!
+  amount: BigInt!
+}

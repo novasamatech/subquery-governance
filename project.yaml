@@ -1,0 +1,30 @@
+specVersion: 1.0.0
+name: nova-governance
+version: 0.0.1
+runner:
+  node:
+    name: "@subql/node"
+    version: "*"
+  query:
+    name: "@subql/query"
+    version: "*"
+description: Project for tracking direct and delegated votings gor OpenGov
+repository: "https://github.com/nova-wallet/subquery-governance"
+schema:
+  file: ./schema.graphql
+network:
+  chainId: "0xb0a8d493285c2df73290dfb7e61f870f17b41801197a149ca93654499ea3dafe"
+  endpoint: "wss://kusama.api.onfinality.io/public-ws"
+  dictionary: "https://api.subquery.network/sq/subquery/kusama-dictionary"
+dataSources:
+  - kind: substrate/Runtime
+    startBlock: 15427815 # first delegation at 15427815
+    mapping:
+      file: ./dist/index.js
+      handlers:
+        - handler: handleDelegate
+          kind: substrate/CallHandler
+          filter:
+            module: convictionVoting
+            method: delegate
+            success: true
