@@ -12,15 +12,15 @@ export async function handleDelegate(extrinsic: SubstrateExtrinsic): Promise<voi
     const sender = extrinsic.extrinsic.signer
     const [trackId, to, conviction, amount] = extrinsic.extrinsic.args
 
-    const delegateAccountIdHex = to.toString()
-    const delegatorAccountIdHex = sender.toString()
+    const delegateAddress = to.toString()
+    const delegatorAddress = sender.toString()
     const delegatorVotes = convictionVotes(conviction.toString(), amount.toString())
 
-    let delegate = await Delegate.get(delegateAccountIdHex)
+    let delegate = await Delegate.get(delegateAddress)
     if (delegate == undefined) {
         delegate = Delegate.create({
-            id: delegateAccountIdHex,
-            accountId: delegateAccountIdHex,
+            id: delegateAddress,
+            accountId: delegateAddress,
             aggregate: {
                 delegatorVotes: "0",
                 delegators: 0
@@ -33,18 +33,18 @@ export async function handleDelegate(extrinsic: SubstrateExtrinsic): Promise<voi
 
     delegate.aggregate.delegatorVotes = newDelegateVotes.toFixed()
 
-    const otherDelegatorDelegations = await Delegation.getByDelegator(delegatorAccountIdHex)
+    const otherDelegatorDelegations = await Delegation.getByDelegator(delegatorAddress)
     const isFirstDelegationToThisDelegate = otherDelegatorDelegations
-        .find((delegation) => delegation.delegateId == delegateAccountIdHex) == undefined
+        .find((delegation) => delegation.delegateId == delegateAddress) == undefined
 
     if (isFirstDelegationToThisDelegate) {
         delegate.aggregate.delegators += 1
     }
 
     const delegation = Delegation.create({
-        id: createDelegationId(trackId.toString(), delegatorAccountIdHex),
-        delegateId: delegateAccountIdHex,
-        delegator: delegatorAccountIdHex,
+        id: createDelegationId(trackId.toString(), delegatorAddress),
+        delegateId: delegateAddress,
+        delegator: delegatorAddress,
         delegation: {
             conviction: conviction.toString(),
             amount: amount.toString()
@@ -60,8 +60,8 @@ export async function handleUndelegate(extrinsic: SubstrateExtrinsic): Promise<v
     const sender = extrinsic.extrinsic.signer
     const [trackId] = extrinsic.extrinsic.args
 
-    const delegatorAccountIdHex = sender.toString()
-    const delegationId = createDelegationId(trackId.toString(), delegatorAccountIdHex)
+    const delegatorAddress = sender.toString()
+    const delegationId = createDelegationId(trackId.toString(), delegatorAddress)
 
     const delegation = await Delegation.get(delegationId)
     if (delegation == undefined) return
@@ -75,7 +75,7 @@ export async function handleUndelegate(extrinsic: SubstrateExtrinsic): Promise<v
     const removedVotes = convictionVotes(delegation.delegation.conviction, delegation.delegation.amount)
     const newDelegatorVotes = currentDelegateVotes.minus(removedVotes)
 
-    const otherDelegatorDelegations = await Delegation.getByDelegator(delegatorAccountIdHex)
+    const otherDelegatorDelegations = await Delegation.getByDelegator(delegatorAddress)
     // we have already removed delegation from db above so here the list should be empty in case it was the last one
     const wasLastDelegationToThisDelegate = otherDelegatorDelegations
         .find((delegation) => delegation.delegateId == delegate.accountId) == undefined
