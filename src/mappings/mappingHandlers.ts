@@ -31,8 +31,15 @@ export async function handleDelegate(extrinsic: SubstrateExtrinsic): Promise<voi
     const currentDelegateVotes = Big(delegate.aggregate.delegatorVotes)
     const newDelegateVotes = currentDelegateVotes.plus(delegatorVotes)
 
-    delegate.aggregate.delegators += 1
     delegate.aggregate.delegatorVotes = newDelegateVotes.toFixed()
+
+    const otherDelegatorDelegations = await Delegation.getByDelegator(delegatorAccountIdHex)
+    const isFirstDelegationToThisDelegate = otherDelegatorDelegations
+        .find((delegation) => delegation.delegateId == delegateAccountIdHex) == undefined
+
+    if (isFirstDelegationToThisDelegate) {
+        delegate.aggregate.delegators += 1
+    }
 
     const delegation = Delegation.create({
         id: createDelegationId(trackId.toString(), delegatorAccountIdHex),
@@ -68,7 +75,14 @@ export async function handleUndelegate(extrinsic: SubstrateExtrinsic): Promise<v
     const removedVotes = convictionVotes(delegation.delegation.conviction, delegation.delegation.amount)
     const newDelegatorVotes = currentDelegateVotes.minus(removedVotes)
 
-    delegate.aggregate.delegators -= 1
+    const otherDelegatorDelegations = await Delegation.getByDelegator(delegatorAccountIdHex)
+    // we have already removed delegation from db above so here the list should be empty in case it was the last one
+    const wasLastDelegationToThisDelegate = otherDelegatorDelegations
+        .find((delegation) => delegation.delegateId == delegate.accountId) == undefined
+
+    if (wasLastDelegationToThisDelegate) {
+        delegate.aggregate.delegators -= 1
+    }
     delegate.aggregate.delegatorVotes = newDelegatorVotes.toFixed()
 
     if (delegate.aggregate.delegators == 0){

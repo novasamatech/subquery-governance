@@ -13,7 +13,7 @@ type DelegateAggregate @jsonField {
 type Delegation @entity {
   id: ID!
   delegate: Delegate!
-  delegator: String!
+  delegator: String! @index
   delegation: ConvictionVote!
   trackId: Int!
 }
