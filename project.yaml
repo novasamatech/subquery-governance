@@ -18,7 +18,7 @@ network:
   dictionary: "https://api.subquery.network/sq/subquery/kusama-dictionary"
 dataSources:
   - kind: substrate/Runtime
-    startBlock: 15427815 # first delegation at 15427815
+    startBlock: 15427810 # first delegation at 15427815
     mapping:
       file: ./dist/index.js
       handlers:
@@ -27,4 +27,11 @@ dataSources:
           filter:
             module: convictionVoting
             method: delegate
+            success: true
+
+        - handler: handleUndelegate
+          kind: substrate/CallHandler
+          filter:
+            module: convictionVoting
+            method: undelegate
             success: true

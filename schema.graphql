@@ -6,19 +6,19 @@ type Delegate @entity {
 }
 
 type DelegateAggregate @jsonField {
-  delegatorVotes: BigInt!
+  delegatorVotes: String!
   delegators: Int!
 }
 
 type Delegation @entity {
   id: ID!
   delegate: Delegate!
-  delegator: String!
-  delegatation: ConvictionVote!
+  delegator: String! @index
+  delegation: ConvictionVote!
   trackId: Int!
 }
 
 type ConvictionVote @jsonField {
   conviction: String!
-  amount: BigInt!
+  amount: String!
 }
