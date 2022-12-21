@@ -85,9 +85,9 @@ export async function handleUndelegate(extrinsic: SubstrateExtrinsic): Promise<v
     }
     delegate.aggregate.delegatorVotes = newDelegatorVotes.toFixed()
 
-    if (delegate.aggregate.delegators == 0){
+    if (delegate.aggregate.delegators == 0) {
         await Delegation.remove(delegation.delegateId)
-    } else  {
+    } else {
         await delegate.save()
     }
 }
