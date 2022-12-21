@@ -12,8 +12,8 @@ export async function handleDelegate(extrinsic: SubstrateExtrinsic): Promise<voi
     const sender = extrinsic.extrinsic.signer
     const [trackId, to, conviction, amount] = extrinsic.extrinsic.args
 
-    const delegateAccountIdHex = to.toHex()
-    const delegatorAccountIdHex = sender.toHex()
+    const delegateAccountIdHex = to.toString()
+    const delegatorAccountIdHex = sender.toString()
     const delegatorVotes = convictionVotes(conviction.toString(), amount.toString())
 
     let delegate = await Delegate.get(delegateAccountIdHex)
@@ -53,7 +53,7 @@ export async function handleUndelegate(extrinsic: SubstrateExtrinsic): Promise<v
     const sender = extrinsic.extrinsic.signer
     const [trackId] = extrinsic.extrinsic.args
 
-    const delegatorAccountIdHex = sender.toHex()
+    const delegatorAccountIdHex = sender.toString()
     const delegationId = createDelegationId(trackId.toString(), delegatorAccountIdHex)
 
     const delegation = await Delegation.get(delegationId)
@@ -71,7 +71,11 @@ export async function handleUndelegate(extrinsic: SubstrateExtrinsic): Promise<v
     delegate.aggregate.delegators -= 1
     delegate.aggregate.delegatorVotes = newDelegatorVotes.toFixed()
 
-    await delegate.save()
+    if (delegate.aggregate.delegators == 0){
+        await Delegation.remove(delegation.delegateId)
+    } else  {
+        await delegate.save()
+    }
 }
 
 function createDelegationId(trackId: string, delegatorAccountIdHex: string): string {
