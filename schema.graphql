@@ -22,3 +22,26 @@ type ConvictionVote @jsonField {
   conviction: String!
   amount: String!
 }
+
+type Referendum @entity {
+  id: ID!
+  trackId: Int!
+  finished: Boolean!
+}
+
+type CastingVoting @entity {
+  id: ID!
+  at: Int!
+  voter: String!
+  referendum: Referendum!
+  aye: Boolean!
+  ownVote: ConvictionVote!
+  delegatorVotes: [DelegatorVoting]! @derivedFrom(field: "parent")
+}
+
+type DelegatorVoting @entity {
+  id: ID!
+  parent: CastingVoting!
+  delegator: String!
+  vote: ConvictionVote!
+}

@@ -22,6 +22,12 @@ dataSources:
     mapping:
       file: ./dist/index.js
       handlers:
+        - handler: handleReferendumSubmission
+          kind: substrate/EventHandler
+          filter:
+            module: referenda
+            method: Submitted
+
         - handler: handleDelegate
           kind: substrate/CallHandler
           filter:
@@ -35,3 +41,33 @@ dataSources:
             module: convictionVoting
             method: undelegate
             success: true
+
+        - handler: handleTerminal
+          kind: substrate/EventHandler
+          filter:
+            module: referenda
+            method: Confirmed
+
+        - handler: handleTerminal
+          kind: substrate/EventHandler
+          filter:
+            module: referenda
+            method: Rejected
+
+        - handler: handleTerminal
+          kind: substrate/EventHandler
+          filter:
+            module: referenda
+            method: Killed
+
+        - handler: handleTerminal
+          kind: substrate/EventHandler
+          filter:
+            module: referenda
+            method: Cancelled
+
+        - handler: handleTerminal
+          kind: substrate/EventHandler
+          filter:
+            module: referenda
+            method: TimedOut
