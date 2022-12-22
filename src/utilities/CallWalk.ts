@@ -23,36 +23,36 @@ async function nestedCallVisitor(call: CallBase<AnyTuple>, callOrigin: Address) 
 
 export async function visitSuccessNestedCalls(
     extrinsic: SubstrateExtrinsic,
-    walk: (successCall: CallBase<AnyTuple>, callOrigin: Address) => void
+    visitor: (successCall: CallBase<AnyTuple>, callOrigin: Address) => void
 ) {
     const eventQueue = new EventQueue(extrinsic)
     const call = extrinsic.extrinsic.method
     const callOrigin = extrinsic.extrinsic.signer
 
     if (extrinsic.success) {
-        await _visitSuccessNestedCalls(call, callOrigin, walk, eventQueue)
+        await _visitSuccessNestedCalls(call, callOrigin, visitor, eventQueue)
     }
 }
 
 async function _visitSuccessNestedCalls(
     call: CallBase<AnyTuple>,
     callOrigin: Address,
-    walk: (successCall: CallBase<AnyTuple>, callOrigin: Address) => void,
+    visitor: (successCall: CallBase<AnyTuple>, callOrigin: Address) => void,
     eventQueue: EventQueue
 ) {
     if (isBatch(call)) {
         for (const innerCall of callsFromBatch(call)) {
             await eventQueue.useNextBatchCompletionStatus((async succeeded => {
                 if (succeeded) {
-                    await _visitSuccessNestedCalls(innerCall, callOrigin, walk, eventQueue)
+                    await _visitSuccessNestedCalls(innerCall, callOrigin, visitor, eventQueue)
                 }
             }))
         }
     } else if (isProxy(call)) {
         const [proxyCall, proxyOrigin] = callFromProxy(call)
-        await _visitSuccessNestedCalls(proxyCall, proxyOrigin, walk, eventQueue)
+        await _visitSuccessNestedCalls(proxyCall, proxyOrigin, visitor, eventQueue)
     } else {
-        walk(call, callOrigin)
+        visitor(call, callOrigin)
     }
 }
 
