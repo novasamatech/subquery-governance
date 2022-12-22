@@ -21,6 +21,21 @@ export async function handleVote(extrinsic: SubstrateExtrinsic): Promise<void> {
     await createOrUpdateVote(sender.toString(), referendumIndex.toString(), accountVote as AccountVote, blockNumber)
 }
 
+export async function handleRemoveVote(extrinsic: SubstrateExtrinsic): Promise<void> {
+	const sender = extrinsic.extrinsic.signer
+	const [trackId, referendumIndex] = extrinsic.extrinsic.args
+
+	const referendum = await Referendum.get(referendumIndex.toString())
+
+	if (referendum == undefined) return
+
+	if (!referendum.finished) {
+		const votingId = getVotingId(sender.toString(), referendumIndex.toString())
+
+		await CastingVoting.remove(votingId)
+	}
+}
+
 async function createOrUpdateVote(voter: string, referendumIndex: string, accountVote: AccountVote, blockNumber: number): Promise<void> {
 	const votingId = getVotingId(voter, referendumIndex)
 
