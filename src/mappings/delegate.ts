@@ -3,7 +3,13 @@ import {
     SubstrateEvent,
     SubstrateBlock,
 } from "@subql/types";
-import {Delegate, Delegation} from "../types";
+
+import {
+    addDelegatorActiveVotings,
+    removeDelegatorActiveVotings
+} from "./voting"
+
+import {Delegate, Delegation, ConvictionVote} from "../types";
 import {Big} from "big.js"
 import {INumber} from "@polkadot/types-codec/types/interfaces";
 import {Codec} from "@polkadot/types-codec/types/codec";
@@ -48,19 +54,23 @@ export async function handleDelegate(call: CallBase<AnyTuple>, callOrigin: Addre
         delegate.aggregate.delegators += 1
     }
 
+    const convictionVote: ConvictionVote = {
+        conviction: conviction.toString(),
+        amount: amount.toString()
+    }
+
     const delegation = Delegation.create({
         id: createDelegationId(trackId.toString(), delegatorAddress),
         delegateId: delegateAddress,
         delegator: delegatorAddress,
-        delegation: {
-            conviction: conviction.toString(),
-            amount: amount.toString()
-        },
+        delegation: convictionVote,
         trackId: requireNumber(trackId).toNumber()
     })
 
     await delegation.save()
     await delegate.save()
+
+    await addDelegatorActiveVotings(delegateAddress, delegatorAddress, Number(trackId.toString()), convictionVote)
 }
 
 export async function handleUndelegateHandler(extrinsic: SubstrateExtrinsic): Promise<void> {
@@ -101,6 +111,8 @@ export async function handleUndelegate(call: CallBase<AnyTuple>, callOrigin: Add
     } else {
         await delegate.save()
     }
+
+    await removeDelegatorActiveVotings(delegate.id, delegatorAddress, Number(trackId.toString()))
 }
 
 function createDelegationId(trackId: string, delegatorAccountIdHex: string): string {

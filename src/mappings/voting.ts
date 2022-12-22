@@ -13,6 +13,7 @@ import {
 
 import { Codec } from "@polkadot/types/types"
 import { AccountVote } from "./votingTypes"
+import { getAllActiveReferendums } from "./referendum"
 
 export async function handleVote(extrinsic: SubstrateExtrinsic): Promise<void> {
 	const sender = extrinsic.extrinsic.signer
@@ -34,6 +35,42 @@ export async function handleRemoveVote(extrinsic: SubstrateExtrinsic): Promise<v
 		const votingId = getVotingId(sender.toString(), referendumIndex.toString())
 
 		await CastingVoting.remove(votingId)
+	}
+}
+
+export async function addDelegatorActiveVotings(delegate: string, delegator: string, trackId: number, vote: ConvictionVote): Promise<void> {
+	const votings = await CastingVoting.getByVoter(delegate)
+	const allTrackReferendums = await getAllActiveReferendums(trackId)
+
+	const trackVotings = votings.filter(voting => {
+		return allTrackReferendums[voting.referendumId] != null
+	})
+
+	const delegatorVotings = trackVotings.map(voting => {
+		return DelegatorVoting.create({
+			id: getDelegatorVotingId(voting.id, delegator),
+			parentId: voting.id,
+			delegator: delegator,
+			vote: vote
+		})
+	})
+
+	if (delegatorVotings.length > 0) {
+		await store.bulkCreate(DelegatorVoting.name, delegatorVotings)
+	}
+}
+
+export async function removeDelegatorActiveVotings(delegate: string, delegator: string, trackId: number): Promise<void> {
+	const votings = await CastingVoting.getByVoter(delegate)
+	const allTrackReferendums = await getAllActiveReferendums(trackId)
+
+	const trackVotings = votings.filter(voting => {
+		return allTrackReferendums[voting.referendumId] != null
+	})
+
+	for(var voting of trackVotings) {
+		const delegatorVotingId = getDelegatorVotingId(voting.id, delegator)
+		await DelegatorVoting.remove(delegatorVotingId)
 	}
 }
 
@@ -116,6 +153,7 @@ async function addDelegatorVotings(parentVotingId: string, delegate: string, tra
 async function clearDelegatorVotings(parentVotingId: string): Promise<void> {
 	const allVotings = await DelegatorVoting.getByParentId(parentVotingId)
 
+	/// store interface doesn't allow bulk removal so do it one by one
 	for(var voting of allVotings) {
 		await DelegatorVoting.remove(voting.id)
 	}
@@ -162,9 +200,9 @@ function extractSplitAbstainVote(accountVote: AccountVote): SplitAbstainVote {
 }
 
 function getVotingId(voter: string, referendumIndex: string): string {
-	return `${referendumIndex}-${voter}`
+	return `${referendumIndex}:${voter}`
 }
 
 function getDelegatorVotingId(votingId: string, delegator: string): string {
-	return `${votingId}-${delegator}`
+	return `${votingId}:${delegator}`
 }

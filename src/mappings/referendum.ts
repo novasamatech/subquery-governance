@@ -27,6 +27,20 @@ export async function handleTerminal(event: SubstrateEvent): Promise<void> {
     await markReferendumFinished(index.toString())
 }
 
+export async function getAllActiveReferendums(trackId: number): Promise<{ [id: string]: Referendum }> {
+    const referendums = await Referendum.getByTrackId(trackId)
+
+    const activeReferendums: { [id: string]: Referendum } = {}
+
+    for(var referendum of referendums) {
+        if (!referendum.finished) {
+            activeReferendums[referendum.id] = referendum
+        }
+    }
+
+    return activeReferendums
+}
+
 async function markReferendumFinished(id: string): Promise<void> {
     const referendum = await Referendum.get(id)
 

@@ -25,14 +25,14 @@ type ConvictionVote @jsonField {
 
 type Referendum @entity {
   id: ID!
-  trackId: Int!
+  trackId: Int! @index
   finished: Boolean!
 }
 
 type CastingVoting @entity {
   id: ID!
   at: Int!
-  voter: String!
+  voter: String! @index
   referendum: Referendum!
   standardVote: StandardVote
   splitVote: SplitVote
