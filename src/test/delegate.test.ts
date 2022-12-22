@@ -4,7 +4,6 @@ import {handleDelegate} from "../mappings/delegate";
 import {CallBase} from "@polkadot/types/types/calls";
 import {AnyTuple} from "@polkadot/types/types/codec";
 import {Address} from "@polkadot/types/interfaces/runtime/types";
-import {Store} from "@subql/types/dist"
 
 function mockType(toStringValue: string): unknown {
     return {
