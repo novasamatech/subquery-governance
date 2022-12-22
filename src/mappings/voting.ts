@@ -53,6 +53,9 @@ async function createVoting(voter: string, referendumIndex: string, accountVote:
 
 async function updateVoting(voting: CastingVoting, accountVote: AccountVote, blockNumber: number): Promise<void> {
 	voting.at = blockNumber
+	voting.standardVote = extractStandardVote(accountVote)
+	voting.splitVote = extractSplitVote(accountVote)
+	voting.splitAbstainVote = extractSplitAbstainVote(accountVote)
 
 	await voting.save()
 }
