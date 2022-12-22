@@ -35,14 +35,14 @@ dataSources:
             method: vote
             success: true
 
-        - handler: handleDelegate
+        - handler: handleDelegateHandler
           kind: substrate/CallHandler
           filter:
             module: convictionVoting
             method: delegate
             success: true
 
-        - handler: handleUndelegate
+        - handler: handleUndelegateHandler
           kind: substrate/CallHandler
           filter:
             module: convictionVoting
@@ -78,3 +78,31 @@ dataSources:
           filter:
             module: referenda
             method: TimedOut
+
+        - handler: handleNestedCalls
+          kind: substrate/CallHandler
+          filter:
+            module: proxy
+            method: proxy
+            success: true
+
+        - handler: handleNestedCalls
+          kind: substrate/CallHandler
+          filter:
+            module: utility
+            method: batch
+            success: true
+
+        - handler: handleNestedCalls
+          kind: substrate/CallHandler
+          filter:
+            module: utility
+            method: batchAll
+            success: true
+
+        - handler: handleNestedCalls
+          kind: substrate/CallHandler
+          filter:
+            module: utility
+            method: forceBatch
+            success: true
