@@ -4,10 +4,10 @@ import {TypedEventRecord} from "@subql/types/dist/interfaces";
 
 export class EventQueue {
 
-    private readonly blockEvents: TypedEventRecord<Codec[]>[]
+    private readonly extrinsicEvents: TypedEventRecord<Codec[]>[]
 
     constructor(extrinsic: SubstrateExtrinsic) {
-        this.blockEvents = extrinsic.events
+        this.extrinsicEvents = extrinsic.events
     }
 
     async useNextBatchCompletionStatus(use: (success: boolean) => void) {
@@ -21,16 +21,16 @@ export class EventQueue {
         const eventIndex = this.findEventIndex(finder)
 
         if (eventIndex != undefined) {
-            const event = finder(this.blockEvents[eventIndex])
+            const event = finder(this.extrinsicEvents[eventIndex])
             // since use() might delete some events as well as result of nested work, we record expected final length
             // to adjust deletion count later
-            const expectedFinalLength = this.blockEvents.length - (eventIndex + 1)
+            const expectedFinalLength = this.extrinsicEvents.length - (eventIndex + 1)
 
             await use(event)
 
-            const deleteCount = this.blockEvents.length - expectedFinalLength
+            const deleteCount = this.extrinsicEvents.length - expectedFinalLength
             if (deleteCount > 0) {
-                this.blockEvents.splice(0, deleteCount)
+                this.extrinsicEvents.splice(0, deleteCount)
             }
         } else  {
             use(undefined)
@@ -41,8 +41,8 @@ export class EventQueue {
         let item: T | undefined = undefined
         let index = 0
 
-        while (index < this.blockEvents.length && item == undefined) {
-            const nextEvent = this.blockEvents[index]
+        while (index < this.extrinsicEvents.length && item == undefined) {
+            const nextEvent = this.extrinsicEvents[index]
             item = finder(nextEvent)
             index++
         }
