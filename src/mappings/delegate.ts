@@ -7,10 +7,17 @@ import {Delegate, Delegation} from "../types";
 import {Big} from "big.js"
 import {INumber} from "@polkadot/types-codec/types/interfaces";
 import {Codec} from "@polkadot/types-codec/types/codec";
+import {CallBase} from "@polkadot/types/types/calls";
+import {AnyTuple} from "@polkadot/types/types/codec";
+import {Address} from "@polkadot/types/interfaces/runtime/types";
 
-export async function handleDelegate(extrinsic: SubstrateExtrinsic): Promise<void> {
-    const sender = extrinsic.extrinsic.signer
-    const [trackId, to, conviction, amount] = extrinsic.extrinsic.args
+export async function handleDelegateHandler(extrinsic: SubstrateExtrinsic): Promise<void> {
+    await handleDelegate(extrinsic.extrinsic.method, extrinsic.extrinsic.signer)
+}
+
+export async function handleDelegate(call: CallBase<AnyTuple>, callOrigin: Address): Promise<void> {
+    const sender = callOrigin
+    const [trackId, to, conviction, amount] = call.args
 
     const delegateAddress = to.toString()
     const delegatorAddress = sender.toString()
@@ -56,9 +63,13 @@ export async function handleDelegate(extrinsic: SubstrateExtrinsic): Promise<voi
     await delegate.save()
 }
 
-export async function handleUndelegate(extrinsic: SubstrateExtrinsic): Promise<void> {
-    const sender = extrinsic.extrinsic.signer
-    const [trackId] = extrinsic.extrinsic.args
+export async function handleUndelegateHandler(extrinsic: SubstrateExtrinsic): Promise<void> {
+    await handleUndelegate(extrinsic.extrinsic.method, extrinsic.extrinsic.signer)
+}
+
+export async function handleUndelegate(call: CallBase<AnyTuple>, callOrigin: Address): Promise<void> {
+    const sender = callOrigin
+    const [trackId] = call.args
 
     const delegatorAddress = sender.toString()
     const delegationId = createDelegationId(trackId.toString(), delegatorAddress)
@@ -136,4 +147,13 @@ function convictionVotes(conviction: string, votes: string): Big {
     const votesBigDecimal = Big(votes);
 
     return votesBigDecimal.mul(convictionMultiplier((conviction)))
+}
+
+
+export function isDelegate(call: CallBase<AnyTuple>) {
+    return call.section == "convictionVoting" && call.method == "delegate"
+}
+
+export function isUndelegate(call: CallBase<AnyTuple>) {
+    return call.section == "convictionVoting" && call.method == "undelegate"
 }
