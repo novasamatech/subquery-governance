@@ -28,6 +28,13 @@ dataSources:
             module: referenda
             method: Submitted
 
+        - handler: handleVote
+          kind: substrate/CallHandler
+          filter:
+            module: convictionVoting
+            method: vote
+            success: true
+
         - handler: handleDelegate
           kind: substrate/CallHandler
           filter:

@@ -34,8 +34,9 @@ type CastingVoting @entity {
   at: Int!
   voter: String!
   referendum: Referendum!
-  aye: Boolean!
-  ownVote: ConvictionVote!
+  standardVote: StandardVote
+  splitVote: SplitVote
+  splitAbstainVote: SplitAbstainVote
   delegatorVotes: [DelegatorVoting]! @derivedFrom(field: "parent")
 }
 
@@ -44,4 +45,20 @@ type DelegatorVoting @entity {
   parent: CastingVoting!
   delegator: String!
   vote: ConvictionVote!
+}
+
+type StandardVote @jsonField {
+  aye: Boolean!
+  vote: ConvictionVote!
+}
+
+type SplitVote @jsonField {
+  ayeAmount: String!
+  nayAmount: String!
+}
+
+type SplitAbstainVote @jsonField {
+  ayeAmount: String!
+  nayAmount: String!
+  abstainAmount: String! 
 }

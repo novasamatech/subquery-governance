@@ -1,15 +1,10 @@
-import {
-    SubstrateExtrinsic,
-    SubstrateEvent,
-    SubstrateBlock,
-} from "@subql/types";
+import { SubstrateEvent } from "@subql/types";
 
 import {
   getEventData
 } from "./common";
 
-import {Delegate, Delegation, Referendum, CastingVoting, DelegatorVoting} from "../types";
-import {Big} from "big.js"
+import {Referendum} from "../types";
 import {INumber} from "@polkadot/types-codec/types/interfaces";
 import {Codec} from "@polkadot/types-codec/types/codec";
 
