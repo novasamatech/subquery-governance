@@ -18,7 +18,9 @@ network:
   dictionary: "https://api.subquery.network/sq/subquery/kusama-dictionary"
 dataSources:
   - kind: substrate/Runtime
-    startBlock: 15427810 # first delegation at 15427815
+    # 15427815 - first delegation
+    # 15428109 - batch inside multisig
+    startBlock: 15428109
     mapping:
       file: ./dist/index.js
       handlers:
@@ -112,4 +114,25 @@ dataSources:
           filter:
             module: utility
             method: forceBatch
+            success: true
+
+        - handler: handleNestedCalls
+          kind: substrate/CallHandler
+          filter:
+            module: multisig
+            method: asMulti
+            success: true
+
+        - handler: handleNestedCalls
+          kind: substrate/CallHandler
+          filter:
+            module: multisig
+            method: approveAsMulti
+            success: true
+
+        - handler: handleNestedCalls
+          kind: substrate/CallHandler
+          filter:
+            module: multisig
+            method: asMultiThreshold1
             success: true

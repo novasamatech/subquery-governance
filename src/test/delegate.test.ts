@@ -27,7 +27,7 @@ const delegateCall = {
     args: [trackId, delegateAccountId, conviction, amount]
 } as unknown as CallBase<AnyTuple>
 
-const signer = mockType("HqRcfhH8VXMhuCk5JXe28WMgDDuW9MVDVNofe1nnTcefVZn") as Address
+const signer = "HqRcfhH8VXMhuCk5JXe28WMgDDuW9MVDVNofe1nnTcefVZn"
 
 describe('delegate handler', () => {
     test('should create new delegate', async () => {
