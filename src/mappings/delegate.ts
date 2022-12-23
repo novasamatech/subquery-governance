@@ -1,18 +1,17 @@
-import {
-    SubstrateExtrinsic,
-    SubstrateEvent,
-    SubstrateBlock,
-} from "@subql/types";
+import {SubstrateExtrinsic} from "@subql/types";
 import {Delegate, Delegation} from "../types";
-import {Big} from "big.js"
+import {Big, RoundingMode} from "big.js"
 import {INumber} from "@polkadot/types-codec/types/interfaces";
 import {Codec} from "@polkadot/types-codec/types/codec";
 import {CallBase} from "@polkadot/types/types/calls";
 import {AnyTuple} from "@polkadot/types/types/codec";
-import {Address} from "@polkadot/types/interfaces/runtime/types";
 
 export async function handleDelegateHandler(extrinsic: SubstrateExtrinsic): Promise<void> {
     await handleDelegate(extrinsic.extrinsic.method, extrinsic.extrinsic.signer.toString())
+}
+
+function bigDecimalToBigInt(bigDecimal: Big): bigint {
+    return BigInt(bigDecimal.toFixed(0, Big.roundUp))
 }
 
 export async function handleDelegate(call: CallBase<AnyTuple>, callOriginAddress: string): Promise<void> {
@@ -27,24 +26,22 @@ export async function handleDelegate(call: CallBase<AnyTuple>, callOriginAddress
         delegate = Delegate.create({
             id: delegateAddress,
             accountId: delegateAddress,
-            aggregate: {
-                delegatorVotes: "0",
-                delegators: 0
-            }
+            delegatorVotes: BigInt(0),
+            delegators: 0
         })
     }
 
-    const currentDelegateVotes = Big(delegate.aggregate.delegatorVotes)
+    const currentDelegateVotes = Big(delegate.delegatorVotes.toString())
     const newDelegateVotes = currentDelegateVotes.plus(delegatorVotes)
 
-    delegate.aggregate.delegatorVotes = newDelegateVotes.toFixed()
+    delegate.delegatorVotes = BigInt(bigDecimalToBigInt(newDelegateVotes))
 
     const otherDelegatorDelegations = await Delegation.getByDelegator(delegatorAddress)
     const isFirstDelegationToThisDelegate = otherDelegatorDelegations
         .find((delegation) => delegation.delegateId == delegateAddress) == undefined
 
     if (isFirstDelegationToThisDelegate) {
-        delegate.aggregate.delegators += 1
+        delegate.delegators += 1
     }
 
     const delegation = Delegation.create({
@@ -80,7 +77,7 @@ export async function handleUndelegate(call: CallBase<AnyTuple>, callOriginAddre
     const delegate = await Delegate.get(delegation.delegateId)
     if (delegate == undefined) return
 
-    const currentDelegateVotes = Big(delegate.aggregate.delegatorVotes)
+    const currentDelegateVotes = Big(delegate.delegatorVotes.toString())
     const removedVotes = convictionVotes(delegation.delegation.conviction, delegation.delegation.amount)
     const newDelegatorVotes = currentDelegateVotes.minus(removedVotes)
 
@@ -90,11 +87,11 @@ export async function handleUndelegate(call: CallBase<AnyTuple>, callOriginAddre
         .find((delegation) => delegation.delegateId == delegate.accountId) == undefined
 
     if (wasLastDelegationToThisDelegate) {
-        delegate.aggregate.delegators -= 1
+        delegate.delegators -= 1
     }
-    delegate.aggregate.delegatorVotes = newDelegatorVotes.toFixed()
+    delegate.delegatorVotes = BigInt(bigDecimalToBigInt(newDelegatorVotes))
 
-    if (delegate.aggregate.delegators == 0) {
+    if (delegate.delegators == 0) {
         await Delegate.remove(delegation.delegateId)
     } else {
         await delegate.save()
