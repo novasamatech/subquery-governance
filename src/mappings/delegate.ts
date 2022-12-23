@@ -1,6 +1,6 @@
 import {SubstrateExtrinsic} from "@subql/types";
 import {Delegate, Delegation} from "../types";
-import {Big} from "big.js"
+import {Big, RoundingMode} from "big.js"
 import {INumber} from "@polkadot/types-codec/types/interfaces";
 import {Codec} from "@polkadot/types-codec/types/codec";
 import {CallBase} from "@polkadot/types/types/calls";
@@ -8,6 +8,10 @@ import {AnyTuple} from "@polkadot/types/types/codec";
 
 export async function handleDelegateHandler(extrinsic: SubstrateExtrinsic): Promise<void> {
     await handleDelegate(extrinsic.extrinsic.method, extrinsic.extrinsic.signer.toString())
+}
+
+function bigDecimalToBigInt(bigDecimal: Big): bigint {
+    return BigInt(bigDecimal.toFixed(0, Big.roundUp))
 }
 
 export async function handleDelegate(call: CallBase<AnyTuple>, callOriginAddress: string): Promise<void> {
@@ -30,7 +34,7 @@ export async function handleDelegate(call: CallBase<AnyTuple>, callOriginAddress
     const currentDelegateVotes = Big(delegate.delegatorVotes.toString())
     const newDelegateVotes = currentDelegateVotes.plus(delegatorVotes)
 
-    delegate.delegatorVotes = BigInt(newDelegateVotes.toFixed())
+    delegate.delegatorVotes = BigInt(bigDecimalToBigInt(newDelegateVotes))
 
     const otherDelegatorDelegations = await Delegation.getByDelegator(delegatorAddress)
     const isFirstDelegationToThisDelegate = otherDelegatorDelegations
@@ -85,7 +89,7 @@ export async function handleUndelegate(call: CallBase<AnyTuple>, callOriginAddre
     if (wasLastDelegationToThisDelegate) {
         delegate.delegators -= 1
     }
-    delegate.delegatorVotes = BigInt(newDelegatorVotes.toFixed())
+    delegate.delegatorVotes = BigInt(bigDecimalToBigInt(newDelegatorVotes))
 
     if (delegate.delegators == 0) {
         await Delegate.remove(delegation.delegateId)
