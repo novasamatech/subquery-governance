@@ -2,7 +2,7 @@ import {SubstrateExtrinsic} from "@subql/types";
 import {Codec} from "@polkadot/types-codec/types";
 import {TypedEventRecord} from "@subql/types/dist/interfaces";
 
-enum MultisigStatus {
+export enum MultisigStatus {
     APPROVED, EXECUTED_OK, EXECUTED_FAILED
 }
 
