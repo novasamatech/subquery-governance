@@ -1,4 +1,4 @@
-import {Delegate, Delegation} from "../types";
+import {Delegate, Delegation, CastingVoting, Referendum } from "../types";
 import {describe, expect, jest, test, beforeEach} from '@jest/globals';
 import {handleDelegate} from "../mappings/delegate";
 import {CallBase} from "@polkadot/types/types/calls";
@@ -32,7 +32,9 @@ const signer = "HqRcfhH8VXMhuCk5JXe28WMgDDuW9MVDVNofe1nnTcefVZn"
 describe('delegate handler', () => {
     test('should create new delegate', async () => {
         jest.spyOn(Delegate, "get").mockReturnValue(undefined)
+        jest.spyOn(CastingVoting, "getByVoter").mockResolvedValue([])
         jest.spyOn(Delegation, "getByDelegator").mockResolvedValue([])
+        jest.spyOn(Referendum, "getByTrackId").mockResolvedValue([])
         jest.spyOn(Delegation.prototype, "save").mockResolvedValue(undefined)
 
         jest.spyOn(Delegate.prototype, "save").mockImplementation(function (this: Delegate) {

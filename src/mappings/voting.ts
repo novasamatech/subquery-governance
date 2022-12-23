@@ -71,7 +71,7 @@ export async function addDelegatorActiveVotings(delegate: string, delegator: str
 	})
 
 	if (delegatorVotings.length > 0) {
-		await store.bulkCreate(DelegatorVoting.name, delegatorVotings)
+		await store.bulkCreate('DelegatorVoting', delegatorVotings)
 	}
 }
 
@@ -169,7 +169,7 @@ async function addDelegatorVotings(parentVotingId: string, delegate: string, tra
 	})
 
 	if (delegatorVotings.length > 0) {
-		await store.bulkCreate(DelegatorVoting.name, delegatorVotings)
+		await store.bulkCreate('DelegatorVoting', delegatorVotings)
 	}
 }
 
