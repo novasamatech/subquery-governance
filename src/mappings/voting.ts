@@ -14,25 +14,40 @@ import {
 import { Codec } from "@polkadot/types/types"
 import { AccountVote } from "./votingTypes"
 import { getAllActiveReferendums } from "./referendum"
+import {CallBase} from "@polkadot/types/types/calls";
+import {AnyTuple} from "@polkadot/types/types/codec";
+import {Address} from "@polkadot/types/interfaces/runtime/types";
 
-export async function handleVote(extrinsic: SubstrateExtrinsic): Promise<void> {
-	const sender = extrinsic.extrinsic.signer
-    const [referendumIndex, accountVote] = extrinsic.extrinsic.args
+export async function handleVoteHandler(extrinsic: SubstrateExtrinsic): Promise<void> {
+	const callOrigin = extrinsic.extrinsic.signer
+    const call = extrinsic.extrinsic.method
     const blockNumber = extrinsic.block.block.header.number.toNumber()
 
-    await createOrUpdateVote(sender.toString(), referendumIndex.toString(), accountVote as AccountVote, blockNumber)
+    await handleVote(call, callOrigin, blockNumber)
 }
 
-export async function handleRemoveVote(extrinsic: SubstrateExtrinsic): Promise<void> {
-	const sender = extrinsic.extrinsic.signer
-	const [trackId, referendumIndex] = extrinsic.extrinsic.args
+export async function handleVote(call: CallBase<AnyTuple>, callOrigin: Address, blockNumber: number): Promise<void> {
+    const [referendumIndex, accountVote] = call.args
+
+    await createOrUpdateVote(callOrigin.toString(), referendumIndex.toString(), accountVote as AccountVote, blockNumber)	
+}
+
+export async function handleRemoveVoteHandler(extrinsic: SubstrateExtrinsic): Promise<void> {
+	const callOrigin = extrinsic.extrinsic.signer
+	const call = extrinsic.extrinsic.method
+
+	await handleRemoveVote(call, callOrigin)
+}
+
+export async function handleRemoveVote(call: CallBase<AnyTuple>, callOrigin: Address): Promise<void> {
+	const [trackId, referendumIndex] = call.args
 
 	const referendum = await Referendum.get(referendumIndex.toString())
 
 	if (referendum == undefined) return
 
 	if (!referendum.finished) {
-		const votingId = getVotingId(sender.toString(), referendumIndex.toString())
+		const votingId = getVotingId(callOrigin.toString(), referendumIndex.toString())
 
 		await CastingVoting.remove(votingId)
 	}
@@ -72,6 +87,14 @@ export async function removeDelegatorActiveVotings(delegate: string, delegator: 
 		const delegatorVotingId = getDelegatorVotingId(voting.id, delegator)
 		await DelegatorVoting.remove(delegatorVotingId)
 	}
+}
+
+export function isVote(call: CallBase<AnyTuple>): boolean {
+	return call.section == "convictionVoting" && call.method == "vote"
+}
+
+export function isRemoveVote(call: CallBase<AnyTuple>): boolean {
+	return call.section == "convictionVoting" && call.method == "removeVote"	
 }
 
 async function createOrUpdateVote(voter: string, referendumIndex: string, accountVote: AccountVote, blockNumber: number): Promise<void> {
