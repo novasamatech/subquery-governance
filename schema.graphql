@@ -47,6 +47,11 @@ type DelegatorVoting @entity {
   vote: ConvictionVote!
 }
 
+type PendingMultisig @entity {
+  id: ID!
+  callData: String!
+}
+
 type StandardVote @jsonField {
   aye: Boolean!
   vote: ConvictionVote!

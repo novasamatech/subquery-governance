@@ -49,8 +49,12 @@ async function _visitSuccessNestedCalls(
             }))
         }
     } else if (isProxy(call)) {
-        const [proxyCall, proxyOrigin] = callFromProxy(call)
-        await _visitSuccessNestedCalls(proxyCall, proxyOrigin, visitor, eventQueue)
+        await eventQueue.useNextProxyCompletionStatus((async succeeded => {
+            if (succeeded) {
+                const [proxyCall, proxyOrigin] = callFromProxy(call)
+                await _visitSuccessNestedCalls(proxyCall, proxyOrigin, visitor, eventQueue)
+            }
+        }))
     } else {
         visitor(call, callOrigin)
     }
