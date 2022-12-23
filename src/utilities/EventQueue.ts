@@ -14,11 +14,11 @@ export class EventQueue {
         this.extrinsicEvents = extrinsic.events
     }
 
-    async useNextBatchCompletionStatus(use: (success: boolean) => void) {
+    async useNextBatchCompletionStatus(use: (success: boolean | undefined) => void) {
         await this.useEventOnce(this.batchItemCompletionStatus, use)
     }
 
-    async useNextMultisigCompletionStatus(use: (success: MultisigStatus) => void) {
+    async useNextMultisigCompletionStatus(use: (success: MultisigStatus | undefined) => void) {
         await this.useEventOnce(this.multisigCompletionStatus, use)
     }
 
@@ -56,14 +56,13 @@ export class EventQueue {
         while (index < this.extrinsicEvents.length && item == undefined) {
             const nextEvent = this.extrinsicEvents[index]
             item = finder(nextEvent)
+
+            if (item != undefined) return index
+
             index++
         }
 
-        if (item == undefined) {
-            return undefined
-        } else {
-            return index
-        }
+        return undefined
     }
 
     private batchItemCompletionStatus(event: TypedEventRecord<Codec[]>): boolean | undefined {

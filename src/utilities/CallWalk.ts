@@ -5,7 +5,7 @@ import {EventQueue, MultisigStatus} from "./EventQueue";
 import {Vec} from '@polkadot/types';
 import {AccountId, Address} from "@polkadot/types/interfaces/runtime/types";
 import {handleDelegate, handleUndelegate, isDelegate, isUndelegate} from "../mappings/delegate";
-import {createKeyMulti, sortAddresses} from '@polkadot/util-crypto';
+import {encodeMultiAddress, sortAddresses} from '@polkadot/util-crypto';
 import {INumber} from "@polkadot/types-codec/types/interfaces";
 import {PendingMultisig} from "../types";
 import {handleMultisig} from "../mappings/multisig";
@@ -15,7 +15,9 @@ const batchCalls = ["batch", "batchAll", "forceBatch"]
 const multisigCalls = ["approveAsMulti", "asMulti", "asMultiThreshold1"]
 
 export async function visitNestedCalls(extrinsic: SubstrateExtrinsic) {
+    logger.info(`Starting nested walk for extrinsic ${extrinsic.block.block.header.number}-${extrinsic.idx}`)
     await visitSuccessNestedCalls(extrinsic, nestedCallVisitor)
+    logger.info(`Finished nested walk for extrinsic ${extrinsic.block.block.header.number}-${extrinsic.idx}`)
 }
 
 async function nestedCallVisitor(visitedCall: VisitedCall) {
@@ -24,12 +26,12 @@ async function nestedCallVisitor(visitedCall: VisitedCall) {
             await handleMultisig(visitedCall.successCall, visitedCall.extras.executionStatus);
             break;
         case "other":
-            await otherCallVisitor(visitedCall.successCall, visitedCall.callOrigin);
+            await otherCallVisitor(visitedCall.successCall, visitedCall.callOriginAddress);
             break;
     }
 }
 
-async function otherCallVisitor(call: CallBase<AnyTuple>, callOrigin: Address) {
+async function otherCallVisitor(call: CallBase<AnyTuple>, callOrigin: string) {
     if (isDelegate(call)) {
         await handleDelegate(call, callOrigin)
     } else if (isUndelegate(call)) {
@@ -43,16 +45,17 @@ export async function visitSuccessNestedCalls(
 ) {
     const eventQueue = new EventQueue(extrinsic)
     const call = extrinsic.extrinsic.method
-    const callOrigin = extrinsic.extrinsic.signer
+    const callOrigin = extrinsic.extrinsic.signer.toString()
+    const depth = 0
 
     if (extrinsic.success) {
-        await _visitSuccessNestedCalls(call, callOrigin, visitor, eventQueue)
+        await _visitSuccessNestedCalls(call, callOrigin, visitor, eventQueue, depth)
     }
 }
 
 interface VisitedCall {
     successCall: CallBase<AnyTuple>
-    callOrigin: Address
+    callOriginAddress: string
     extras: VisitedExtras
 }
 
@@ -69,37 +72,59 @@ interface VisitedOther {
 
 async function _visitSuccessNestedCalls(
     call: CallBase<AnyTuple>,
-    callOrigin: Address,
+    callOriginAddress: string,
     visitor: (VisitedCall) => void,
-    eventQueue: EventQueue
+    eventQueue: EventQueue,
+    depth: number
 ) {
-    if (isBatch(call)) {
-        console.log(`Detected batch`)
+    function logWalkInfo(content: string) {
+        const indent = "  ".repeat(depth)
+        logger.info(indent + content)
+    }
 
-        for (const innerCall of callsFromBatch(call)) {
-            await eventQueue.useNextBatchCompletionStatus((async succeeded => {
-                if (succeeded) {
-                    console.log(`Batch item succeeded`)
-                    await _visitSuccessNestedCalls(innerCall, callOrigin, visitor, eventQueue)
-                } else {
-                    console.log(`Batch item failed`)
+    function logWalkWarn(content: string) {
+        const indent = "  ".repeat(depth)
+        logger.warn(indent + content)
+    }
+
+    const nextDepth = depth + 1
+
+    if (isBatch(call)) {
+        let innerCalls = callsFromBatch(call);
+        let idx = 0
+
+        logWalkInfo(`Visiting batch with ${innerCalls.length} inner calls`)
+
+        for (const innerCall of innerCalls) {
+            await eventQueue.useNextBatchCompletionStatus((async status => {
+                switch (status) {
+                    case true:
+                        logWalkInfo(`Batch item succeeded`)
+                        await _visitSuccessNestedCalls(innerCall, callOriginAddress, visitor, eventQueue, nextDepth)
+                        break;
+                    case false:
+                        logWalkInfo(`Batch item failed`)
+                        break
+                    case undefined:
+                        logWalkWarn(`Failed to determine completion status for inner call at ${idx}`)
                 }
             }))
+            idx++
         }
     } else if (isProxy(call)) {
         await eventQueue.useNextProxyCompletionStatus((async succeeded => {
             if (succeeded) {
                 const [proxyCall, proxyOrigin] = callFromProxy(call)
-                await _visitSuccessNestedCalls(proxyCall, proxyOrigin, visitor, eventQueue)
+                await _visitSuccessNestedCalls(proxyCall, proxyOrigin, visitor, eventQueue, nextDepth)
             }
         }))
     } else if (isMultisig(call)) {
-        console.log(`Detected multisig`)
+        logWalkInfo(`Detected multisig`)
 
         await eventQueue.useNextMultisigCompletionStatus((async status => {
             const visitedCall: VisitedCall = {
                 successCall: call,
-                callOrigin: callOrigin,
+                callOriginAddress: callOriginAddress,
                 extras: {
                     type: "multisig",
                     executionStatus: status
@@ -107,19 +132,33 @@ async function _visitSuccessNestedCalls(
             }
             visitor(visitedCall) // we visit multisig calls separately since mappers need them to save callData
 
-            if (status === MultisigStatus.EXECUTED_OK) {
-                console.log(`Multisig was executed ok`)
+            switch (status) {
+                case MultisigStatus.APPROVED:
+                    logWalkInfo(`Multisig was approved but not yet executed`)
 
-                const [multisigCall, multisigOrigin] = await callFromMultisig(call, callOrigin)
-                await _visitSuccessNestedCalls(multisigCall, multisigOrigin, visitor, eventQueue)
-            } else  {
-                console.log(`Multisig was approved or was executed with error`)
+                    break;
+                case MultisigStatus.EXECUTED_OK:
+                    logWalkInfo(`Multisig was executed ok`)
+
+                    const [multisigCall, multisigOrigin] = await callFromMultisig(call, callOriginAddress)
+                    await _visitSuccessNestedCalls(multisigCall, multisigOrigin, visitor, eventQueue, nextDepth)
+
+                    break;
+                case MultisigStatus.EXECUTED_FAILED:
+                    logWalkInfo(`Multisig was executed with failure`)
+
+                    break;
+                case undefined:
+                    logWalkWarn(`Failed to determine completion status for multisig`)
+
+                    break;
             }
         }))
     } else {
+        logWalkInfo(`Visiting leaf: ${call.section}-${call.method}`)
         const visitedCall: VisitedCall = {
             successCall: call,
-            callOrigin: callOrigin,
+            callOriginAddress: callOriginAddress,
             extras: {
                 type: "other"
             }
@@ -145,17 +184,17 @@ function callsFromBatch(batchCall: CallBase<AnyTuple>): CallBase<AnyTuple>[] {
     return batchCall.args[0] as Vec<CallBase<AnyTuple>>
 }
 
-function callFromProxy(proxyCall: CallBase<AnyTuple>): [CallBase<AnyTuple>, Address] {
+function callFromProxy(proxyCall: CallBase<AnyTuple>): [CallBase<AnyTuple>, string] {
     const [proxyOrigin, _, proxiedCall] = proxyCall.args
-    return [proxiedCall as CallBase<AnyTuple>, proxyOrigin as Address]
+    return [proxiedCall as CallBase<AnyTuple>, (proxyOrigin as Address).toString()]
 }
 
-async function callFromMultisig(call: CallBase<AnyTuple>, origin: Address): Promise<[CallBase<AnyTuple>, Address]> {
+async function callFromMultisig(call: CallBase<AnyTuple>, originAddress: string): Promise<[CallBase<AnyTuple>, string]> {
     if (call.method == "asMulti") {
         const [threshold, otherSignatories, _, multisigCall] = call.args
 
         const multisigAddress = generateMultisigAddress(
-            origin,
+            originAddress,
             otherSignatories as Vec<AccountId>,
             (threshold as INumber).toNumber()
         )
@@ -165,7 +204,7 @@ async function callFromMultisig(call: CallBase<AnyTuple>, origin: Address): Prom
         const [otherSignatories, multisigCall] = call.args
         const threshold = 1
 
-        const multisigAddress = generateMultisigAddress(origin, otherSignatories as Vec<AccountId>, threshold)
+        const multisigAddress = generateMultisigAddress(originAddress, otherSignatories as Vec<AccountId>, threshold)
 
         return [multisigCall as CallBase<AnyTuple>, multisigAddress]
     } else if (call.method == "approveAsMulti") {
@@ -179,7 +218,7 @@ async function callFromMultisig(call: CallBase<AnyTuple>, origin: Address): Prom
 
         const multisigCall = api.registry.createType("GenericCall", callData) as CallBase<AnyTuple>
         const multisigAddress = generateMultisigAddress(
-            origin,
+            originAddress,
             otherSignatories as Vec<AccountId>,
             (threshold as INumber).toNumber()
         )
@@ -192,15 +231,13 @@ async function callFromMultisig(call: CallBase<AnyTuple>, origin: Address): Prom
 
 
 function generateMultisigAddress(
-    origin: Address,
+    origin: string,
     otherSignatories: Vec<AccountId>,
     threshold: number,
-): Address {
+): string {
     const otherSignatoriesAddresses = otherSignatories.map((accountId) => accountId.toString())
-    const allAddresses = otherSignatoriesAddresses.concat(origin.toString())
+    const allAddresses = otherSignatoriesAddresses.concat(origin)
     const sortedAddresses = sortAddresses(allAddresses)
 
-    const address = createKeyMulti(sortedAddresses, threshold)
-
-    return api.registry.createType("Address", address)
+    return encodeMultiAddress(sortedAddresses, threshold, api.registry.chainSS58)
 }

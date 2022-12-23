@@ -12,15 +12,14 @@ import {AnyTuple} from "@polkadot/types/types/codec";
 import {Address} from "@polkadot/types/interfaces/runtime/types";
 
 export async function handleDelegateHandler(extrinsic: SubstrateExtrinsic): Promise<void> {
-    await handleDelegate(extrinsic.extrinsic.method, extrinsic.extrinsic.signer)
+    await handleDelegate(extrinsic.extrinsic.method, extrinsic.extrinsic.signer.toString())
 }
 
-export async function handleDelegate(call: CallBase<AnyTuple>, callOrigin: Address): Promise<void> {
-    const sender = callOrigin
+export async function handleDelegate(call: CallBase<AnyTuple>, callOriginAddress: string): Promise<void> {
+    const delegatorAddress = callOriginAddress
     const [trackId, to, conviction, amount] = call.args
 
     const delegateAddress = to.toString()
-    const delegatorAddress = sender.toString()
     const delegatorVotes = convictionVotes(conviction.toString(), amount.toString())
 
     let delegate = await Delegate.get(delegateAddress)
@@ -64,14 +63,13 @@ export async function handleDelegate(call: CallBase<AnyTuple>, callOrigin: Addre
 }
 
 export async function handleUndelegateHandler(extrinsic: SubstrateExtrinsic): Promise<void> {
-    await handleUndelegate(extrinsic.extrinsic.method, extrinsic.extrinsic.signer)
+    await handleUndelegate(extrinsic.extrinsic.method, extrinsic.extrinsic.signer.toString())
 }
 
-export async function handleUndelegate(call: CallBase<AnyTuple>, callOrigin: Address): Promise<void> {
-    const sender = callOrigin
+export async function handleUndelegate(call: CallBase<AnyTuple>, callOriginAddress: string): Promise<void> {
+    const delegatorAddress = callOriginAddress
     const [trackId] = call.args
 
-    const delegatorAddress = sender.toString()
     const delegationId = createDelegationId(trackId.toString(), delegatorAddress)
 
     const delegation = await Delegation.get(delegationId)
