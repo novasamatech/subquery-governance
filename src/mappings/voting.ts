@@ -23,23 +23,23 @@ export async function handleVoteHandler(extrinsic: SubstrateExtrinsic): Promise<
     const call = extrinsic.extrinsic.method
     const blockNumber = extrinsic.block.block.header.number.toNumber()
 
-    await handleVote(call, callOrigin, blockNumber)
+    await handleVote(call, callOrigin.toString(), blockNumber)
 }
 
-export async function handleVote(call: CallBase<AnyTuple>, callOrigin: Address, blockNumber: number): Promise<void> {
+export async function handleVote(call: CallBase<AnyTuple>, callOrigin: string, blockNumber: number): Promise<void> {
     const [referendumIndex, accountVote] = call.args
 
-    await createOrUpdateVote(callOrigin.toString(), referendumIndex.toString(), accountVote as AccountVote, blockNumber)	
+    await createOrUpdateVote(callOrigin, referendumIndex.toString(), accountVote as AccountVote, blockNumber)	
 }
 
 export async function handleRemoveVoteHandler(extrinsic: SubstrateExtrinsic): Promise<void> {
 	const callOrigin = extrinsic.extrinsic.signer
 	const call = extrinsic.extrinsic.method
 
-	await handleRemoveVote(call, callOrigin)
+	await handleRemoveVote(call, callOrigin.toString())
 }
 
-export async function handleRemoveVote(call: CallBase<AnyTuple>, callOrigin: Address): Promise<void> {
+export async function handleRemoveVote(call: CallBase<AnyTuple>, callOrigin: string): Promise<void> {
 	const [trackId, referendumIndex] = call.args
 
 	const referendum = await Referendum.get(referendumIndex.toString())
@@ -47,7 +47,7 @@ export async function handleRemoveVote(call: CallBase<AnyTuple>, callOrigin: Add
 	if (referendum == undefined) return
 
 	if (!referendum.finished) {
-		const votingId = getVotingId(callOrigin.toString(), referendumIndex.toString())
+		const votingId = getVotingId(callOrigin, referendumIndex.toString())
 
 		await CastingVoting.remove(votingId)
 	}

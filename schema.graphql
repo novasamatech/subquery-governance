@@ -1,13 +1,9 @@
 type Delegate @entity {
   id: ID!
   accountId: String! @index(unique: true)
-  aggregate: DelegateAggregate!
-  delegations: [Delegation]! @derivedFrom(field: "delegate")
-}
-
-type DelegateAggregate @jsonField {
-  delegatorVotes: String!
+  delegatorVotes: BigInt!
   delegators: Int!
+  delegations: [Delegation]! @derivedFrom(field: "delegate")
 }
 
 type Delegation @entity {
@@ -45,6 +41,11 @@ type DelegatorVoting @entity {
   parent: CastingVoting!
   delegator: String!
   vote: ConvictionVote!
+}
+
+type PendingMultisig @entity {
+  id: ID!
+  callData: String!
 }
 
 type StandardVote @jsonField {

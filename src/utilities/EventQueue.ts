@@ -2,6 +2,10 @@ import {SubstrateExtrinsic} from "@subql/types";
 import {Codec} from "@polkadot/types-codec/types";
 import {TypedEventRecord} from "@subql/types/dist/interfaces";
 
+export enum MultisigStatus {
+    APPROVED, EXECUTED_OK, EXECUTED_FAILED
+}
+
 export class EventQueue {
 
     private readonly extrinsicEvents: TypedEventRecord<Codec[]>[]
@@ -10,8 +14,16 @@ export class EventQueue {
         this.extrinsicEvents = extrinsic.events
     }
 
-    async useNextBatchCompletionStatus(use: (success: boolean) => void) {
+    async useNextBatchCompletionStatus(use: (success: boolean | undefined) => void) {
         await this.useEventOnce(this.batchItemCompletionStatus, use)
+    }
+
+    async useNextMultisigCompletionStatus(use: (success: MultisigStatus | undefined) => void) {
+        await this.useEventOnce(this.multisigCompletionStatus, use)
+    }
+
+    async useNextProxyCompletionStatus(use: (success: boolean) => void) {
+        await this.useEventOnce(this.proxyCompletionStatus, use)
     }
 
     async useEventOnce<T>(
@@ -32,7 +44,7 @@ export class EventQueue {
             if (deleteCount > 0) {
                 this.extrinsicEvents.splice(0, deleteCount)
             }
-        } else  {
+        } else {
             use(undefined)
         }
     }
@@ -44,14 +56,13 @@ export class EventQueue {
         while (index < this.extrinsicEvents.length && item == undefined) {
             const nextEvent = this.extrinsicEvents[index]
             item = finder(nextEvent)
+
+            if (item != undefined) return index
+
             index++
         }
 
-        if (item == undefined) {
-            return undefined
-        } else {
-            return index
-        }
+        return undefined
     }
 
     private batchItemCompletionStatus(event: TypedEventRecord<Codec[]>): boolean | undefined {
@@ -59,6 +70,31 @@ export class EventQueue {
             return true
         } else if (api.events.utility.ItemFailed.is(event.event)) {
             return false
+        } else {
+            return undefined
+        }
+    }
+
+    private multisigCompletionStatus(event: TypedEventRecord<Codec[]>): MultisigStatus | undefined {
+        if (api.events.multisig.MultisigApproval.is(event.event)) {
+            return MultisigStatus.APPROVED
+        } else if (api.events.multisig.MultisigExecuted.is(event.event)) {
+            const executionResult = event.event.data[4]
+            if (executionResult.isOk) {
+                return MultisigStatus.EXECUTED_OK
+            } else {
+                return MultisigStatus.EXECUTED_FAILED
+            }
+        } else {
+            return undefined
+        }
+    }
+
+    private proxyCompletionStatus(event: TypedEventRecord<Codec[]>): boolean | undefined {
+        if (api.events.proxy.ProxyExecuted.is(event.event)) {
+            const [executionResult] = event.event.data
+
+            return executionResult.isOk
         } else {
             return undefined
         }
