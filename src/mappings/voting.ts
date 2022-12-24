@@ -50,6 +50,8 @@ export async function handleRemoveVote(call: CallBase<AnyTuple>, callOrigin: str
 		const votingId = getVotingId(callOrigin, referendumIndex.toString())
 
 		await CastingVoting.remove(votingId)
+
+		await clearDelegatorVotings(votingId)
 	}
 }
 
@@ -71,6 +73,7 @@ export async function addDelegatorActiveVotings(delegate: string, delegator: str
 	})
 
 	if (delegatorVotings.length > 0) {
+		logger.info(`Add delegator ${delegator} votes in track ${trackId} from ${delegate}`)
 		await store.bulkCreate('DelegatorVoting', delegatorVotings)
 	}
 }
@@ -84,6 +87,8 @@ export async function removeDelegatorActiveVotings(delegate: string, delegator: 
 	})
 
 	for(var voting of trackVotings) {
+		logger.info(`Removing votes from ${voting.referendumId} for ${delegator}`)
+
 		const delegatorVotingId = getDelegatorVotingId(voting.id, delegator)
 		await DelegatorVoting.remove(delegatorVotingId)
 	}
@@ -157,7 +162,11 @@ async function addDelegatorVotings(parentVotingId: string, delegate: string, tra
 	/// store's interface doesn't allow to query by two field so we query by voter and then filter by track id
 	const allDelegations = await Delegation.getByDelegateId(delegate)
 
-	const trackDelegations = allDelegations.filter(delegation => { delegation.trackId == trackId })
+	logger.info(`Delegations of ${delegate}: ${allDelegations.length}`)
+
+	const trackDelegations = allDelegations.filter(delegation => { return delegation.trackId == trackId })
+
+	logger.info(`Delegations of ${delegate} for track ${trackId}: ${trackDelegations.length}`)
 
 	const delegatorVotings = trackDelegations.map(delegation => {
 		return DelegatorVoting.create({
@@ -169,6 +178,7 @@ async function addDelegatorVotings(parentVotingId: string, delegate: string, tra
 	})
 
 	if (delegatorVotings.length > 0) {
+		logger.info(`Add delegate's votings: ${parentVotingId} ${delegate}`)
 		await store.bulkCreate('DelegatorVoting', delegatorVotings)
 	}
 }
@@ -178,6 +188,7 @@ async function clearDelegatorVotings(parentVotingId: string): Promise<void> {
 
 	/// store interface doesn't allow bulk removal so do it one by one
 	for(var voting of allVotings) {
+		logger.info(`Clear delegate voting: ${parentVotingId}`)
 		await DelegatorVoting.remove(voting.id)
 	}
 }
@@ -186,7 +197,7 @@ function extractStandardVote(accountVote: AccountVote): StandardVote {
 	if (accountVote.isStandard) {
 		const standardVote = accountVote.asStandard
 		return {
-			aye: standardVote.vote.aye,
+			aye: standardVote.vote.isAye,
 			vote: {
 				conviction: standardVote.vote.conviction.type,
 				amount: standardVote.balance.toString()
