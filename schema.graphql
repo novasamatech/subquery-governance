@@ -4,6 +4,7 @@ type Delegate @entity {
   delegatorVotes: BigInt!
   delegators: Int!
   delegations: [Delegation]! @derivedFrom(field: "delegate")
+  delegateVotes: [CastingVoting]! @derivedFrom(field: "delegate")
 }
 
 type Delegation @entity {
@@ -29,6 +30,7 @@ type CastingVoting @entity {
   id: ID!
   at: Int!
   voter: String! @index
+  delegate: Delegate @index
   referendum: Referendum!
   standardVote: StandardVote
   splitVote: SplitVote

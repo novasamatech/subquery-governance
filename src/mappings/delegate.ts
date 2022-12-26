@@ -28,12 +28,13 @@ export async function handleDelegate(call: CallBase<AnyTuple>, callOriginAddress
     const [trackId, to, conviction, amount] = call.args
 
     const delegateAddress = to.toString()
+    const delegateId = getDelegateId(delegateAddress)
     const delegatorVotes = convictionVotes(conviction.toString(), amount.toString())
 
     let delegate = await Delegate.get(delegateAddress)
     if (delegate == undefined) {
         delegate = Delegate.create({
-            id: delegateAddress,
+            id: delegateId,
             accountId: delegateAddress,
             delegatorVotes: BigInt(0),
             delegators: 0
@@ -47,7 +48,7 @@ export async function handleDelegate(call: CallBase<AnyTuple>, callOriginAddress
 
     const otherDelegatorDelegations = await Delegation.getByDelegator(delegatorAddress)
     const isFirstDelegationToThisDelegate = otherDelegatorDelegations
-        .find((delegation) => delegation.delegateId == delegateAddress) == undefined
+        .find((delegation) => delegation.delegateId == delegateId) == undefined
 
     if (isFirstDelegationToThisDelegate) {
         delegate.delegators += 1
@@ -60,7 +61,7 @@ export async function handleDelegate(call: CallBase<AnyTuple>, callOriginAddress
 
     const delegation = Delegation.create({
         id: createDelegationId(trackId.toString(), delegatorAddress),
-        delegateId: delegateAddress,
+        delegateId: getDelegateId(delegateAddress),
         delegator: delegatorAddress,
         delegation: convictionVote,
         trackId: requireNumber(trackId).toNumber()
@@ -159,6 +160,9 @@ function convictionVotes(conviction: string, votes: string): Big {
     return votesBigDecimal.mul(convictionMultiplier((conviction)))
 }
 
+export function getDelegateId(delegateAddress: string): string {
+    return delegateAddress
+}
 
 export function isDelegate(call: CallBase<AnyTuple>) {
     return call.section == "convictionVoting" && call.method == "delegate"
