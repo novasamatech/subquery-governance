@@ -1,10 +1,11 @@
-import {SubstrateExtrinsic} from "@subql/types";
+import {SubstrateExtrinsic, SubstrateBlock} from "@subql/types";
 import {CallBase} from "@polkadot/types/types/calls";
 import {AnyTuple} from "@polkadot/types/types/codec";
 import {EventQueue, MultisigStatus} from "./EventQueue";
 import {Vec} from '@polkadot/types';
 import {AccountId, Address} from "@polkadot/types/interfaces/runtime/types";
 import {handleDelegate, handleUndelegate, isDelegate, isUndelegate} from "../mappings/delegate";
+import {handleVote, handleRemoveVote, isVote, isRemoveVote} from "../mappings/voting";
 import {encodeMultiAddress, sortAddresses} from '@polkadot/util-crypto';
 import {INumber} from "@polkadot/types-codec/types/interfaces";
 import {PendingMultisig} from "../types";
@@ -26,13 +27,17 @@ async function nestedCallVisitor(visitedCall: VisitedCall) {
             await handleMultisig(visitedCall.successCall, visitedCall.extras.executionStatus);
             break;
         case "other":
-            await otherCallVisitor(visitedCall.successCall, visitedCall.callOriginAddress);
+            await otherCallVisitor(visitedCall.successCall, visitedCall.callOriginAddress, visitedCall.block);
             break;
     }
 }
 
-async function otherCallVisitor(call: CallBase<AnyTuple>, callOrigin: string) {
-    if (isDelegate(call)) {
+async function otherCallVisitor(call: CallBase<AnyTuple>, callOrigin: string, block: SubstrateBlock) {
+    if (isVote(call)) {
+        await handleVote(call, callOrigin, block.block.header.number.toNumber())
+    } else if (isRemoveVote(call)) {
+        await handleRemoveVote(call, callOrigin)
+    } else if (isDelegate(call)) {
         await handleDelegate(call, callOrigin)
     } else if (isUndelegate(call)) {
         await handleUndelegate(call, callOrigin)
@@ -46,10 +51,11 @@ export async function visitSuccessNestedCalls(
     const eventQueue = new EventQueue(extrinsic)
     const call = extrinsic.extrinsic.method
     const callOrigin = extrinsic.extrinsic.signer.toString()
+    const block = extrinsic.block
     const depth = 0
 
     if (extrinsic.success) {
-        await _visitSuccessNestedCalls(call, callOrigin, visitor, eventQueue, depth)
+        await _visitSuccessNestedCalls(call, callOrigin, block, visitor, eventQueue, depth)
     }
 }
 
@@ -57,6 +63,7 @@ interface VisitedCall {
     successCall: CallBase<AnyTuple>
     callOriginAddress: string
     extras: VisitedExtras
+    block: SubstrateBlock
 }
 
 export type VisitedExtras = VisitedMultisig | VisitedOther
@@ -73,6 +80,7 @@ interface VisitedOther {
 async function _visitSuccessNestedCalls(
     call: CallBase<AnyTuple>,
     callOriginAddress: string,
+    block: SubstrateBlock,
     visitor: (VisitedCall) => void,
     eventQueue: EventQueue,
     depth: number
@@ -100,7 +108,7 @@ async function _visitSuccessNestedCalls(
                 switch (status) {
                     case true:
                         logWalkInfo(`Batch item succeeded`)
-                        await _visitSuccessNestedCalls(innerCall, callOriginAddress, visitor, eventQueue, nextDepth)
+                        await _visitSuccessNestedCalls(innerCall, callOriginAddress, block, visitor, eventQueue, nextDepth)
                         break;
                     case false:
                         logWalkInfo(`Batch item failed`)
@@ -115,7 +123,7 @@ async function _visitSuccessNestedCalls(
         await eventQueue.useNextProxyCompletionStatus((async succeeded => {
             if (succeeded) {
                 const [proxyCall, proxyOrigin] = callFromProxy(call)
-                await _visitSuccessNestedCalls(proxyCall, proxyOrigin, visitor, eventQueue, nextDepth)
+                await _visitSuccessNestedCalls(proxyCall, proxyOrigin, block, visitor, eventQueue, nextDepth)
             }
         }))
     } else if (isMultisig(call)) {
@@ -125,6 +133,7 @@ async function _visitSuccessNestedCalls(
             const visitedCall: VisitedCall = {
                 successCall: call,
                 callOriginAddress: callOriginAddress,
+                block: block,
                 extras: {
                     type: "multisig",
                     executionStatus: status
@@ -141,7 +150,7 @@ async function _visitSuccessNestedCalls(
                     logWalkInfo(`Multisig was executed ok`)
 
                     const [multisigCall, multisigOrigin] = await callFromMultisig(call, callOriginAddress)
-                    await _visitSuccessNestedCalls(multisigCall, multisigOrigin, visitor, eventQueue, nextDepth)
+                    await _visitSuccessNestedCalls(multisigCall, multisigOrigin, block, visitor, eventQueue, nextDepth)
 
                     break;
                 case MultisigStatus.EXECUTED_FAILED:
@@ -159,6 +168,7 @@ async function _visitSuccessNestedCalls(
         const visitedCall: VisitedCall = {
             successCall: call,
             callOriginAddress: callOriginAddress,
+            block: block,
             extras: {
                 type: "other"
             }

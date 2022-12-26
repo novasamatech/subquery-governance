@@ -1,5 +1,6 @@
 import type { Enum, Struct } from '@polkadot/types-codec';
 import type { Balance } from '@polkadot/types/interfaces/runtime';
+import type { Vote } from '@polkadot/types/interfaces/elections';
 
 /// Polkadot JS lib currently doesn't contain types for convictionVoting and referenda pallets. Added them manually.
 
@@ -27,11 +28,6 @@ export interface AccountVoteSplitAbstain extends Struct {
   readonly aye: Balance;
   readonly nay: Balance;
   readonly abstain: Balance;
-}
-
-export interface Vote extends Struct {
-  readonly aye: boolean;
-  readonly conviction: Conviction;
 }
 
 export interface Conviction extends Enum {

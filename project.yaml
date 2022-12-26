@@ -18,9 +18,10 @@ network:
   dictionary: "https://api.subquery.network/sq/subquery/kusama-dictionary"
 dataSources:
   - kind: substrate/Runtime
-    # 15427815 - first delegation
+    startBlock: 15426830 
+    # first delegation at 15427815 
+    # first referendum 15426832
     # 15428109 - batch inside multisig
-    startBlock: 15428109
     mapping:
       file: ./dist/index.js
       handlers:
@@ -30,14 +31,14 @@ dataSources:
             module: referenda
             method: Submitted
 
-        - handler: handleVote
+        - handler: handleVoteHandler
           kind: substrate/CallHandler
           filter:
             module: convictionVoting
             method: vote
             success: true
 
-        - handler: handleRemoveVote
+        - handler: handleRemoveVoteHandler
           kind: substrate/CallHandler
           filter:
             module: convictionVoting
