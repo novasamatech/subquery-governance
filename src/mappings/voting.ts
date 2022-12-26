@@ -17,6 +17,7 @@ import { getAllActiveReferendums } from "./referendum"
 import {CallBase} from "@polkadot/types/types/calls";
 import {AnyTuple} from "@polkadot/types/types/codec";
 import {Address} from "@polkadot/types/interfaces/runtime/types";
+import {getDelegateId} from "./delegate";
 
 export async function handleVoteHandler(extrinsic: SubstrateExtrinsic): Promise<void> {
 	const callOrigin = extrinsic.extrinsic.signer
@@ -115,11 +116,14 @@ async function createOrUpdateVote(voter: string, referendumIndex: string, accoun
 }
 
 async function createVoting(voter: string, referendumIndex: string, accountVote: AccountVote, blockNumber: number): Promise<void> {
+	let delegateId = getDelegateId(voter)
+
 	const voting = CastingVoting.create({
 		id: getVotingId(voter, referendumIndex),
 		voter: voter,
 		referendumId: referendumIndex,
 		at: blockNumber,
+		delegateId: delegateId,
 		standardVote: extractStandardVote(accountVote),
 		splitVote: extractSplitVote(accountVote),
 		splitAbstainVote: extractSplitAbstainVote(accountVote)
@@ -133,7 +137,7 @@ async function createVoting(voter: string, referendumIndex: string, accountVote:
 	if (isStandardVote) {
 		const referendum = await Referendum.get(referendumIndex)
 
-		await addDelegatorVotings(voting.id, voter, referendum.trackId)
+		await addDelegatorVotings(voting.id, delegateId, referendum.trackId)
 	}
 }
 
@@ -152,21 +156,21 @@ async function updateVoting(voting: CastingVoting, accountVote: AccountVote, blo
 	/// delegators' votes are taken into account only for standard vote of the delegate
 	if (!isStandardBefore && isStandardAfter) {
 		const referendum = await Referendum.get(voting.referendumId)
-		await addDelegatorVotings(voting.id, voting.voter, referendum.trackId)
+		await addDelegatorVotings(voting.id, voting.delegateId, referendum.trackId)
 	} else if (isStandardBefore && !isStandardAfter) {
 		await clearDelegatorVotings(voting.id)
 	}
 }
 
-async function addDelegatorVotings(parentVotingId: string, delegate: string, trackId: number): Promise<void> {
+async function addDelegatorVotings(parentVotingId: string, delegateId: string, trackId: number): Promise<void> {
 	/// store's interface doesn't allow to query by two field so we query by voter and then filter by track id
-	const allDelegations = await Delegation.getByDelegateId(delegate)
+	const allDelegations = await Delegation.getByDelegateId(delegateId)
 
-	logger.info(`Delegations of ${delegate}: ${allDelegations.length}`)
+	logger.info(`Delegations of ${delegateId}: ${allDelegations.length}`)
 
 	const trackDelegations = allDelegations.filter(delegation => { return delegation.trackId == trackId })
 
-	logger.info(`Delegations of ${delegate} for track ${trackId}: ${trackDelegations.length}`)
+	logger.info(`Delegations of ${delegateId} for track ${trackId}: ${trackDelegations.length}`)
 
 	const delegatorVotings = trackDelegations.map(delegation => {
 		return DelegatorVoting.create({
@@ -178,7 +182,7 @@ async function addDelegatorVotings(parentVotingId: string, delegate: string, tra
 	})
 
 	if (delegatorVotings.length > 0) {
-		logger.info(`Add delegate's votings: ${parentVotingId} ${delegate}`)
+		logger.info(`Add delegate's votings: ${parentVotingId} ${delegateId}`)
 		await store.bulkCreate('DelegatorVoting', delegatorVotings)
 	}
 }
