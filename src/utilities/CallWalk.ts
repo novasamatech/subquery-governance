@@ -120,10 +120,16 @@ async function _visitSuccessNestedCalls(
             idx++
         }
     } else if (isProxy(call)) {
+        logWalkInfo(`Detected proxy`)
+
         await eventQueue.useNextProxyCompletionStatus((async succeeded => {
             if (succeeded) {
+                logWalkInfo(`Proxy call succeeded`)
+
                 const [proxyCall, proxyOrigin] = callFromProxy(call)
                 await _visitSuccessNestedCalls(proxyCall, proxyOrigin, block, visitor, eventQueue, nextDepth)
+            } else  {
+                logWalkInfo(`Proxy call failed`)
             }
         }))
     } else if (isMultisig(call)) {
@@ -139,7 +145,7 @@ async function _visitSuccessNestedCalls(
                     executionStatus: status
                 }
             }
-            visitor(visitedCall) // we visit multisig calls separately since mappers need them to save callData
+            await visitor(visitedCall) // we visit multisig calls separately since mappers need them to save callData
 
             switch (status) {
                 case MultisigStatus.APPROVED:
@@ -174,7 +180,7 @@ async function _visitSuccessNestedCalls(
             }
         }
 
-        visitor(visitedCall)
+        await visitor(visitedCall)
     }
 }
 
