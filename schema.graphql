@@ -9,7 +9,7 @@ type Delegate @entity {
 
 type Delegation @entity {
   id: ID!
-  delegate: Delegate!
+  delegate: Delegate! @index
   delegator: String! @index
   delegation: ConvictionVote!
   trackId: Int!
