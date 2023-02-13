@@ -60,11 +60,11 @@ export async function addDelegatorActiveVotings(delegate: string, delegator: str
 	const votings = await CastingVoting.getByVoter(delegate)
 	const allTrackReferendums = await getAllActiveReferendums(trackId)
 
-	const trackVotings = votings.filter(voting => {
-		return allTrackReferendums[voting.referendumId] != null
+	const targetVotings = votings.filter(voting => {
+		return isStandard(voting) && (allTrackReferendums[voting.referendumId] != null)
 	})
 
-	const delegatorVotings = trackVotings.map(voting => {
+	const delegatorVotings = targetVotings.map(voting => {
 		return DelegatorVoting.create({
 			id: getDelegatorVotingId(voting.id, delegator),
 			parentId: voting.id,
@@ -83,16 +83,20 @@ export async function removeDelegatorActiveVotings(delegate: string, delegator: 
 	const votings = await CastingVoting.getByVoter(delegate)
 	const allTrackReferendums = await getAllActiveReferendums(trackId)
 
-	const trackVotings = votings.filter(voting => {
-		return allTrackReferendums[voting.referendumId] != null
+	const targetVotings = votings.filter(voting => {
+		return isStandard(voting) && (allTrackReferendums[voting.referendumId] != null)
 	})
 
-	for(var voting of trackVotings) {
+	for(var voting of targetVotings) {
 		logger.info(`Removing votes from ${voting.referendumId} for ${delegator}`)
 
 		const delegatorVotingId = getDelegatorVotingId(voting.id, delegator)
 		await DelegatorVoting.remove(delegatorVotingId)
 	}
+}
+
+function isStandard(voting: CastingVoting): boolean {
+	return voting.standardVote != null
 }
 
 export function isVote(call: CallBase<AnyTuple>): boolean {
@@ -142,7 +146,7 @@ async function createVoting(voter: string, referendumIndex: string, accountVote:
 }
 
 async function updateVoting(voting: CastingVoting, accountVote: AccountVote, blockNumber: number): Promise<void> {
-	const isStandardBefore = voting.standardVote != null
+	const isStandardBefore = isStandard(voting)
 
 	voting.at = blockNumber
 	voting.standardVote = extractStandardVote(accountVote)
@@ -151,7 +155,7 @@ async function updateVoting(voting: CastingVoting, accountVote: AccountVote, blo
 
 	await voting.save()
 
-	const isStandardAfter = voting.standardVote != null
+	const isStandardAfter = isStandard(voting)
 
 	/// delegators' votes are taken into account only for standard vote of the delegate
 	if (!isStandardBefore && isStandardAfter) {
