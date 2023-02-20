@@ -10,10 +10,12 @@ import {encodeMultiAddress, sortAddresses} from '@polkadot/util-crypto';
 import {INumber} from "@polkadot/types-codec/types/interfaces";
 import {PendingMultisig} from "../types";
 import {handleMultisig} from "../mappings/multisig";
+import {Codec} from "@polkadot/types/types";
 
 
 const batchCalls = ["batch", "batchAll", "forceBatch"]
 const multisigCalls = ["approveAsMulti", "asMulti", "asMultiThreshold1"]
+const proxyCalls = ["proxy", "proxyAnnounced"]
 
 export async function visitNestedCalls(extrinsic: SubstrateExtrinsic) {
     logger.info(`Starting nested walk for extrinsic ${extrinsic.block.block.header.number}-${extrinsic.idx}`)
@@ -189,7 +191,7 @@ function isBatch(call: CallBase<AnyTuple>): boolean {
 }
 
 function isProxy(call: CallBase<AnyTuple>): boolean {
-    return call.section == "proxy" && call.method == "proxy"
+    return call.section == "proxy" && proxyCalls.includes(call.method)
 }
 
 function isMultisig(call: CallBase<AnyTuple>): boolean {
@@ -201,7 +203,21 @@ function callsFromBatch(batchCall: CallBase<AnyTuple>): CallBase<AnyTuple>[] {
 }
 
 function callFromProxy(proxyCall: CallBase<AnyTuple>): [CallBase<AnyTuple>, string] {
-    const [proxyOrigin, _, proxiedCall] = proxyCall.args
+    let proxyOrigin: Codec
+    let proxiedCall: Codec
+
+    if (proxyCall.method == "proxy") {
+        // args = [real, force_proxy_type, call]
+        proxyOrigin = proxyCall.args[0]
+        proxiedCall = proxyCall.args[2]
+    } else if (proxyCall.method == "proxyAnnounced") {
+        // args = [delegate, real, force_proxy_type, call]
+        proxyOrigin = proxyCall.args[1]
+        proxiedCall = proxyCall.args[3]
+    } else {
+        throw Error(`Invalid state - unknown proxy method: ${proxyCall.method}`)
+    }
+
     return [proxiedCall as CallBase<AnyTuple>, (proxyOrigin as Address).toString()]
 }
 
