@@ -18,10 +18,11 @@ network:
   dictionary: "https://api.subquery.network/sq/subquery/kusama-dictionary"
 dataSources:
   - kind: substrate/Runtime
-    startBlock: 15426830 
+    startBlock: 15426830
     # first delegation at 15427815 
     # first referendum 15426832
     # 15428109 - batch inside multisig
+    # 16662525 - proxy announced
     mapping:
       file: ./dist/index.js
       handlers:
@@ -94,6 +95,13 @@ dataSources:
           filter:
             module: proxy
             method: proxy
+            success: true
+
+        - handler: handleNestedCalls
+          kind: substrate/CallHandler
+          filter:
+            module: proxy
+            method: proxyAnnounced
             success: true
 
         - handler: handleNestedCalls
