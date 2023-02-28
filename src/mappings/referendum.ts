@@ -4,10 +4,7 @@ import {
     getEventData, unboundedQueryOptions
 } from "./common";
 
-import {DelegatorVoting, Referendum} from "../types";
-import {INumber} from "@polkadot/types-codec/types/interfaces";
-import {Codec} from "@polkadot/types-codec/types/codec";
-import {DelegatorVotingProps} from "../types/models/DelegatorVoting";
+import {Referendum} from "../types";
 import {ReferendumProps} from "../types/models/Referendum";
 
 export async function handleReferendumSubmission(event: SubstrateEvent): Promise<void> {
