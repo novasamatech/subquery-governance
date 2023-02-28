@@ -13,12 +13,11 @@ repository: "https://github.com/nova-wallet/subquery-governance"
 schema:
   file: ./schema.graphql
 network:
-  chainId: "0xb0a8d493285c2df73290dfb7e61f870f17b41801197a149ca93654499ea3dafe"
-  endpoint: "wss://kusama.api.onfinality.io/public-ws"
-  dictionary: "https://api.subquery.network/sq/subquery/kusama-dictionary"
+  chainId: "0xb587be787d4b0209a3105469f0cbfa34eeb834e49d949e841898b2243825d765"
+  endpoint: "wss://novasama.uz"
 dataSources:
   - kind: substrate/Runtime
-    startBlock: 15426830
+    startBlock: 1
     # first delegation at 15427815 
     # first referendum 15426832
     # 15428109 - batch inside multisig
