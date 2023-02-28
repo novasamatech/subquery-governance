@@ -1,12 +1,14 @@
 import { SubstrateEvent } from "@subql/types";
 
 import {
-  getEventData
+    getEventData, unboundedQueryOptions
 } from "./common";
 
-import {Referendum} from "../types";
+import {DelegatorVoting, Referendum} from "../types";
 import {INumber} from "@polkadot/types-codec/types/interfaces";
 import {Codec} from "@polkadot/types-codec/types/codec";
+import {DelegatorVotingProps} from "../types/models/DelegatorVoting";
+import {ReferendumProps} from "../types/models/Referendum";
 
 export async function handleReferendumSubmission(event: SubstrateEvent): Promise<void> {
     const [index, track] = getEventData(event)
@@ -28,7 +30,7 @@ export async function handleTerminal(event: SubstrateEvent): Promise<void> {
 }
 
 export async function getAllActiveReferendums(trackId: number): Promise<{ [id: string]: Referendum }> {
-    const referendums = await Referendum.getByTrackId(trackId)
+    const referendums = await getReferendumByTrackId(trackId)
 
     const activeReferendums: { [id: string]: Referendum } = {}
 
@@ -39,6 +41,12 @@ export async function getAllActiveReferendums(trackId: number): Promise<{ [id: s
     }
 
     return activeReferendums
+}
+
+async function getReferendumByTrackId(trackId: number): Promise<Referendum[] | undefined> {
+    const records = await store.getByField('Referendum', 'trackId', trackId, unboundedQueryOptions);
+
+    return records.map(record => Referendum.create(record as ReferendumProps));
 }
 
 async function markReferendumFinished(id: string): Promise<void> {

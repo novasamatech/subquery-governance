@@ -11,12 +11,10 @@ import {
 	SplitAbstainVote 
 } from "../types";
 
-import { Codec } from "@polkadot/types/types"
 import { AccountVote } from "./votingTypes"
 import { getAllActiveReferendums } from "./referendum"
 import {CallBase} from "@polkadot/types/types/calls";
 import {AnyTuple} from "@polkadot/types/types/codec";
-import {Address} from "@polkadot/types/interfaces/runtime/types";
 import {getDelegateId} from "./delegate";
 import {unboundedQueryOptions} from "./common";
 import {DelegationProps} from "../types/models/Delegation";
@@ -208,19 +206,19 @@ async function clearDelegatorVotings(parentVotingId: string): Promise<void> {
 async function getDelegationByDelegateId(delegateId: string): Promise<Delegation[] | undefined> {
 	const records = await store.getByField('Delegation', 'delegateId', delegateId, unboundedQueryOptions);
 
-	return records.map(record => this.create(record as DelegationProps));
+	return records.map(record => Delegation.create(record as DelegationProps));
 }
 
 async function getCastingVotingByVoter(voter: string): Promise<CastingVoting[] | undefined>{
 	const records = await store.getByField('CastingVoting', 'voter', voter, unboundedQueryOptions);
 
-	return records.map(record => this.create(record as CastingVotingProps));
+	return records.map(record => CastingVoting.create(record as CastingVotingProps));
 }
 
-async function getDelegatorVotingByParentId(parentId: string): Promise<Delegation[] | undefined> {
+async function getDelegatorVotingByParentId(parentId: string): Promise<DelegatorVoting[] | undefined> {
 	const records = await store.getByField('DelegatorVoting', 'parentId', parentId, unboundedQueryOptions);
 
-	return records.map(record => this.create(record as DelegatorVotingProps));
+	return records.map(record => DelegatorVoting.create(record as DelegatorVotingProps));
 }
 
 function extractStandardVote(accountVote: AccountVote): StandardVote {
