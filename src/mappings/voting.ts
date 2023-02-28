@@ -11,13 +11,15 @@ import {
 	SplitAbstainVote 
 } from "../types";
 
-import { Codec } from "@polkadot/types/types"
 import { AccountVote } from "./votingTypes"
 import { getAllActiveReferendums } from "./referendum"
 import {CallBase} from "@polkadot/types/types/calls";
 import {AnyTuple} from "@polkadot/types/types/codec";
-import {Address} from "@polkadot/types/interfaces/runtime/types";
 import {getDelegateId} from "./delegate";
+import {unboundedQueryOptions} from "./common";
+import {DelegationProps} from "../types/models/Delegation";
+import {CastingVotingProps} from "../types/models/CastingVoting";
+import {DelegatorVotingProps} from "../types/models/DelegatorVoting";
 
 export async function handleVoteHandler(extrinsic: SubstrateExtrinsic): Promise<void> {
 	const callOrigin = extrinsic.extrinsic.signer
@@ -57,7 +59,7 @@ export async function handleRemoveVote(call: CallBase<AnyTuple>, callOrigin: str
 }
 
 export async function addDelegatorActiveVotings(delegate: string, delegator: string, trackId: number, vote: ConvictionVote): Promise<void> {
-	const votings = await CastingVoting.getByVoter(delegate)
+	const votings = await getCastingVotingByVoter(delegate)
 	const allTrackReferendums = await getAllActiveReferendums(trackId)
 
 	const targetVotings = votings.filter(voting => {
@@ -80,7 +82,7 @@ export async function addDelegatorActiveVotings(delegate: string, delegator: str
 }
 
 export async function removeDelegatorActiveVotings(delegate: string, delegator: string, trackId: number): Promise<void> {
-	const votings = await CastingVoting.getByVoter(delegate)
+	const votings = await getCastingVotingByVoter(delegate)
 	const allTrackReferendums = await getAllActiveReferendums(trackId)
 
 	const targetVotings = votings.filter(voting => {
@@ -168,7 +170,7 @@ async function updateVoting(voting: CastingVoting, accountVote: AccountVote, blo
 
 async function addDelegatorVotings(parentVotingId: string, delegateId: string, trackId: number): Promise<void> {
 	/// store's interface doesn't allow to query by two field so we query by voter and then filter by track id
-	const allDelegations = await Delegation.getByDelegateId(delegateId)
+	const allDelegations = await getDelegationByDelegateId(delegateId)
 
 	logger.info(`Delegations of ${delegateId}: ${allDelegations.length}`)
 
@@ -192,13 +194,31 @@ async function addDelegatorVotings(parentVotingId: string, delegateId: string, t
 }
 
 async function clearDelegatorVotings(parentVotingId: string): Promise<void> {
-	const allVotings = await DelegatorVoting.getByParentId(parentVotingId)
+	const allVotings = await getDelegatorVotingByParentId(parentVotingId)
 
 	/// store interface doesn't allow bulk removal so do it one by one
 	for(var voting of allVotings) {
 		logger.info(`Clear delegate voting: ${parentVotingId}`)
 		await DelegatorVoting.remove(voting.id)
 	}
+}
+
+async function getDelegationByDelegateId(delegateId: string): Promise<Delegation[] | undefined> {
+	const records = await store.getByField('Delegation', 'delegateId', delegateId, unboundedQueryOptions);
+
+	return records.map(record => Delegation.create(record as DelegationProps));
+}
+
+async function getCastingVotingByVoter(voter: string): Promise<CastingVoting[] | undefined>{
+	const records = await store.getByField('CastingVoting', 'voter', voter, unboundedQueryOptions);
+
+	return records.map(record => CastingVoting.create(record as CastingVotingProps));
+}
+
+async function getDelegatorVotingByParentId(parentId: string): Promise<DelegatorVoting[] | undefined> {
+	const records = await store.getByField('DelegatorVoting', 'parentId', parentId, unboundedQueryOptions);
+
+	return records.map(record => DelegatorVoting.create(record as DelegatorVotingProps));
 }
 
 function extractStandardVote(accountVote: AccountVote): StandardVote {
