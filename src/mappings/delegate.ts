@@ -9,7 +9,7 @@ import {
 } from "./voting"
 
 import {Delegate, Delegation, ConvictionVote} from "../types";
-import {Big, RoundingMode} from "big.js"
+import {Big} from "big.js"
 import {INumber} from "@polkadot/types-codec/types/interfaces";
 import {Codec} from "@polkadot/types-codec/types/codec";
 import {CallBase} from "@polkadot/types/types/calls";
