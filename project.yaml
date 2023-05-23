@@ -136,12 +136,12 @@ dataSources:
           kind: substrate/CallHandler
           filter:
             module: multisig
-            method: approveAsMulti
+            method: asMultiThreshold1
             success: true
 
         - handler: handleNestedCalls
           kind: substrate/CallHandler
           filter:
-            module: multisig
-            method: asMultiThreshold1
+            module: utility
+            method: asDerivative
             success: true
