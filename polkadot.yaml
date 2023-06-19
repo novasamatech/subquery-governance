@@ -1,0 +1,145 @@
+specVersion: 1.0.0
+name: nova-governance-polkadot
+version: 0.0.1
+runner:
+  node:
+    name: "@subql/node"
+    version: "*"
+  query:
+    name: "@subql/query"
+    version: "*"
+description: Project for tracking direct and delegated votings gor OpenGov
+repository: "https://github.com/nova-wallet/subquery-governance"
+schema:
+  file: ./schema.graphql
+network:
+  chainId: "0x91b171bb158e2d3848fa23a9f1c25182fb8e20313b2c1eb49219da7a70ce90c3"
+  endpoint: "wss://polkadot.api.onfinality.io/public-ws"
+  dictionary: "https://api.subquery.network/sq/subquery/dictionary-polkadot"
+dataSources:
+  - kind: substrate/Runtime
+    startBlock: 15978410
+    # first delegation at 15978410  https://polkadot.subscan.io/extrinsic/15978410-2
+    # first referendum 15978430  https://polkadot.subscan.io/extrinsic/15978430-3
+    mapping:
+      file: ./dist/index.js
+      handlers:
+        - handler: handleReferendumSubmission
+          kind: substrate/EventHandler
+          filter:
+            module: referenda
+            method: Submitted
+
+        - handler: handleVoteHandler
+          kind: substrate/CallHandler
+          filter:
+            module: convictionVoting
+            method: vote
+            success: true
+
+        - handler: handleRemoveVoteHandler
+          kind: substrate/CallHandler
+          filter:
+            module: convictionVoting
+            method: removeVote
+            success: true
+
+        - handler: handleDelegateHandler
+          kind: substrate/CallHandler
+          filter:
+            module: convictionVoting
+            method: delegate
+            success: true
+
+        - handler: handleUndelegateHandler
+          kind: substrate/CallHandler
+          filter:
+            module: convictionVoting
+            method: undelegate
+            success: true
+
+        - handler: handleTerminal
+          kind: substrate/EventHandler
+          filter:
+            module: referenda
+            method: Confirmed
+
+        - handler: handleTerminal
+          kind: substrate/EventHandler
+          filter:
+            module: referenda
+            method: Rejected
+
+        - handler: handleTerminal
+          kind: substrate/EventHandler
+          filter:
+            module: referenda
+            method: Killed
+
+        - handler: handleTerminal
+          kind: substrate/EventHandler
+          filter:
+            module: referenda
+            method: Cancelled
+
+        - handler: handleTerminal
+          kind: substrate/EventHandler
+          filter:
+            module: referenda
+            method: TimedOut
+
+        - handler: handleNestedCalls
+          kind: substrate/CallHandler
+          filter:
+            module: proxy
+            method: proxy
+            success: true
+
+        - handler: handleNestedCalls
+          kind: substrate/CallHandler
+          filter:
+            module: proxy
+            method: proxyAnnounced
+            success: true
+
+        - handler: handleNestedCalls
+          kind: substrate/CallHandler
+          filter:
+            module: utility
+            method: batch
+            success: true
+
+        - handler: handleNestedCalls
+          kind: substrate/CallHandler
+          filter:
+            module: utility
+            method: batchAll
+            success: true
+
+        - handler: handleNestedCalls
+          kind: substrate/CallHandler
+          filter:
+            module: utility
+            method: forceBatch
+            success: true
+
+        - handler: handleNestedCalls
+          kind: substrate/CallHandler
+          filter:
+            module: multisig
+            method: asMulti
+            success: true
+
+        - handler: handleNestedCalls
+          kind: substrate/CallHandler
+          filter:
+            module: multisig
+            method: asMultiThreshold1
+            success: true
+
+        - handler: handleNestedCalls
+          kind: substrate/CallHandler
+          filter:
+            module: utility
+            method: asDerivative
+            success: true
