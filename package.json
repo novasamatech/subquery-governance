@@ -32,6 +32,6 @@
   "dependencies": {
     "@types/big.js": "^6.1.6",
     "big.js": "^6.2.1",
-    "subquery-call-visitor": "^1.0.0"
+    "subquery-call-visitor": "^1.1.0"
   }
 }
