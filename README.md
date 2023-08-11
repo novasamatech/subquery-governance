@@ -101,3 +101,6 @@ For the `subql-starter` project, you can try to query with the following code to
   }
 }
 ```
+## License
+Subquery governance is available under MIT license. See the LICENSE file for more info.
+© Novasama Technologies GmbH 2023
