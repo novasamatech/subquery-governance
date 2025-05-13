@@ -32,7 +32,7 @@ export async function handleVoteHandler(extrinsic: SubstrateExtrinsic): Promise<
 export async function handleVote(call: CallBase<AnyTuple>, callOrigin: string, blockNumber: number): Promise<void> {
     const [referendumIndex, accountVote] = call.args
 
-    await createOrUpdateVote(callOrigin, referendumIndex.toString(), accountVote as AccountVote, blockNumber)	
+    await createOrUpdateVote(callOrigin, referendumIndex.toString(), accountVote as AccountVote, blockNumber)
 }
 
 export async function handleRemoveVoteHandler(extrinsic: SubstrateExtrinsic): Promise<void> {
@@ -106,7 +106,7 @@ export function isVote(call: CallBase<AnyTuple>): boolean {
 }
 
 export function isRemoveVote(call: CallBase<AnyTuple>): boolean {
-	return call.section == "convictionVoting" && call.method == "removeVote"	
+	return call.section == "convictionVoting" && call.method == "removeVote"
 }
 
 async function createOrUpdateVote(voter: string, referendumIndex: string, accountVote: AccountVote, blockNumber: number): Promise<void> {
@@ -204,20 +204,15 @@ async function clearDelegatorVotings(parentVotingId: string): Promise<void> {
 }
 
 async function getDelegationByDelegateId(delegateId: string): Promise<Delegation[] | undefined> {
-	const records = await Delegation.getByDelegateId(delegateId, unboundedQueryOptions);
-
-	return records.map(record => Delegation.create(record as DelegationProps));
+	return await Delegation.getByDelegateId(delegateId, unboundedQueryOptions);
 }
 
 async function getCastingVotingByVoter(voter: string): Promise<CastingVoting[] | undefined>{
-	const records = await CastingVoting.getByVoter(voter, unboundedQueryOptions);
-
-	return records.map(record => CastingVoting.create(record as CastingVotingProps));
+	return await CastingVoting.getByVoter(voter, unboundedQueryOptions);
 }
 
 async function getDelegatorVotingByParentId(parentId: string): Promise<DelegatorVoting[] | undefined> {
-	const records = await DelegatorVoting.getByParentId(parentId, unboundedQueryOptions);
-	return records.map(record => DelegatorVoting.create(record as DelegatorVotingProps));
+	return await DelegatorVoting.getByParentId(parentId, unboundedQueryOptions);
 }
 
 function extractStandardVote(accountVote: AccountVote): StandardVote {
