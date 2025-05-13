@@ -1,14 +1,14 @@
 import { SubstrateExtrinsic, SubstrateBlock } from "@subql/types";
 
 import {
-	Delegation, 
-	Referendum, 
-	CastingVoting, 
+	Delegation,
+	Referendum,
+	CastingVoting,
 	DelegatorVoting,
-	ConvictionVote, 
-	StandardVote, 
-	SplitVote, 
-	SplitAbstainVote 
+	ConvictionVote,
+	StandardVote,
+	SplitVote,
+	SplitAbstainVote, Delegate
 } from "../types";
 
 import { AccountVote } from "./votingTypes"
@@ -204,20 +204,19 @@ async function clearDelegatorVotings(parentVotingId: string): Promise<void> {
 }
 
 async function getDelegationByDelegateId(delegateId: string): Promise<Delegation[] | undefined> {
-	const records = await store.getByField('Delegation', 'delegateId', delegateId, unboundedQueryOptions);
+	const records = await Delegation.getByDelegateId(delegateId, unboundedQueryOptions);
 
 	return records.map(record => Delegation.create(record as DelegationProps));
 }
 
 async function getCastingVotingByVoter(voter: string): Promise<CastingVoting[] | undefined>{
-	const records = await store.getByField('CastingVoting', 'voter', voter, unboundedQueryOptions);
+	const records = await CastingVoting.getByVoter(voter, unboundedQueryOptions);
 
 	return records.map(record => CastingVoting.create(record as CastingVotingProps));
 }
 
 async function getDelegatorVotingByParentId(parentId: string): Promise<DelegatorVoting[] | undefined> {
-	const records = await store.getByField('DelegatorVoting', 'parentId', parentId, unboundedQueryOptions);
-
+	const records = await DelegatorVoting.getByParentId(parentId, unboundedQueryOptions);
 	return records.map(record => DelegatorVoting.create(record as DelegatorVotingProps));
 }
 

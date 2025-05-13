@@ -41,8 +41,7 @@ export async function getAllActiveReferendums(trackId: number): Promise<{ [id: s
 }
 
 async function getReferendumByTrackId(trackId: number): Promise<Referendum[] | undefined> {
-    const records = await store.getByField('Referendum', 'trackId', trackId, unboundedQueryOptions);
-
+    const records = await Referendum.getByTrackId(trackId, unboundedQueryOptions);
     return records.map(record => Referendum.create(record as ReferendumProps));
 }
 
