@@ -14,6 +14,7 @@ import {INumber} from "@polkadot/types-codec/types/interfaces";
 import {Codec} from "@polkadot/types-codec/types/codec";
 import {CallBase} from "@polkadot/types/types/calls";
 import {AnyTuple} from "@polkadot/types/types/codec";
+import {unboundedQueryOptions} from "./common";
 
 export async function handleDelegateHandler(extrinsic: SubstrateExtrinsic): Promise<void> {
     await handleDelegate(extrinsic.extrinsic.method, extrinsic.extrinsic.signer.toString())
@@ -46,7 +47,7 @@ export async function handleDelegate(call: CallBase<AnyTuple>, callOriginAddress
 
     delegate.delegatorVotes = BigInt(bigDecimalToBigInt(newDelegateVotes))
 
-    const otherDelegatorDelegations = await Delegation.getByDelegator(delegatorAddress)
+    const otherDelegatorDelegations = await Delegation.getByDelegator(delegatorAddress, unboundedQueryOptions)
     const isFirstDelegationToThisDelegate = otherDelegatorDelegations
         .find((delegation) => delegation.delegateId == delegateId) == undefined
 
@@ -95,7 +96,7 @@ export async function handleUndelegate(call: CallBase<AnyTuple>, callOriginAddre
     const removedVotes = convictionVotes(delegation.delegation.conviction, delegation.delegation.amount)
     const newDelegatorVotes = currentDelegateVotes.minus(removedVotes)
 
-    const otherDelegatorDelegations = await Delegation.getByDelegator(delegatorAddress)
+    const otherDelegatorDelegations = await Delegation.getByDelegator(delegatorAddress, unboundedQueryOptions)
     // we have already removed delegation from db above so here the list should be empty in case it was the last one
     const wasLastDelegationToThisDelegate = otherDelegatorDelegations
         .find((delegation) => delegation.delegateId == delegate.accountId) == undefined
