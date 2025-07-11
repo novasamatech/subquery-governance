@@ -18,7 +18,6 @@ type Delegation @entity {
 type ConvictionVote @jsonField {
   conviction: String!
   amount: String!
-  timestamp: Int!
 }
 
 type Referendum @entity {
@@ -30,6 +29,7 @@ type Referendum @entity {
 type CastingVoting @entity {
   id: ID!
   at: Int!
+  timestamp: Int!
   voter: String! @index
   delegate: Delegate @index
   referendum: Referendum!

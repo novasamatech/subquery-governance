@@ -123,11 +123,12 @@ async function createVoting(voter: string, referendumIndex: string, accountVote:
 
 	const voting = CastingVoting.create({
 		id: getVotingId(voter, referendumIndex),
+		timestamp: timestamp(block),
 		voter: voter,
 		referendumId: referendumIndex,
 		at: block.block.header.number.toNumber(),
 		delegateId: delegateId,
-		standardVote: extractStandardVote(accountVote, block),
+		standardVote: extractStandardVote(accountVote),
 		splitVote: extractSplitVote(accountVote),
 		splitAbstainVote: extractSplitAbstainVote(accountVote)
 	})
@@ -148,9 +149,11 @@ async function updateVoting(voting: CastingVoting, accountVote: AccountVote, blo
 	const isStandardBefore = isStandard(voting)
 
 	voting.at = block.block.header.number.toNumber()
-	voting.standardVote = extractStandardVote(accountVote, block)
+	voting.standardVote = extractStandardVote(accountVote)
 	voting.splitVote = extractSplitVote(accountVote)
 	voting.splitAbstainVote = extractSplitAbstainVote(accountVote)
+	voting.timestamp = timestamp(block)
+
 
 	await voting.save()
 
@@ -212,7 +215,7 @@ async function getDelegatorVotingByParentId(parentId: string): Promise<Delegator
 	return await DelegatorVoting.getByParentId(parentId, unboundedQueryOptions);
 }
 
-function extractStandardVote(accountVote: AccountVote, block: SubstrateBlock): StandardVote {
+function extractStandardVote(accountVote: AccountVote): StandardVote {
 	if (accountVote.isStandard) {
 		const standardVote = accountVote.asStandard
 		return {
@@ -220,7 +223,6 @@ function extractStandardVote(accountVote: AccountVote, block: SubstrateBlock): S
 			vote: {
 				conviction: standardVote.vote.conviction.type,
 				amount: standardVote.balance.toString(),
-				timestamp: timestamp(block)
 			}
 		}
 	} else {
