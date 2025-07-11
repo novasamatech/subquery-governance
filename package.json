@@ -9,7 +9,8 @@
     "start:docker": "docker-compose pull && docker-compose up --remove-orphans",
     "dev": "subql codegen && subql build && docker-compose pull && docker-compose up --remove-orphans",
     "prepack": "rm -rf dist && npm run build",
-    "test": "jest"
+    "test": "jest",
+    "types": "tsc -p tsconfig.json --noEmit"
   },
   "homepage": "https://github.com/subquery/kusama-subql-starter",
   "repository": "github:subquery/kusama-subql-starter",

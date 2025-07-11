@@ -17,22 +17,19 @@ import {CallBase} from "@polkadot/types/types/calls";
 import {AnyTuple} from "@polkadot/types/types/codec";
 import {getDelegateId} from "./delegate";
 import {unboundedQueryOptions} from "./common";
-import {DelegationProps} from "../types/models/Delegation";
-import {CastingVotingProps} from "../types/models/CastingVoting";
-import {DelegatorVotingProps} from "../types/models/DelegatorVoting";
+import { timestamp } from "../utilities/timestamp";
 
 export async function handleVoteHandler(extrinsic: SubstrateExtrinsic): Promise<void> {
 	const callOrigin = extrinsic.extrinsic.signer
     const call = extrinsic.extrinsic.method
-    const blockNumber = extrinsic.block.block.header.number.toNumber()
 
-    await handleVote(call, callOrigin.toString(), blockNumber)
+    await handleVote(call, callOrigin.toString(), extrinsic.block)
 }
 
-export async function handleVote(call: CallBase<AnyTuple>, callOrigin: string, blockNumber: number): Promise<void> {
+export async function handleVote(call: CallBase<AnyTuple>, callOrigin: string, block: SubstrateBlock): Promise<void> {
     const [referendumIndex, accountVote] = call.args
 
-    await createOrUpdateVote(callOrigin, referendumIndex.toString(), accountVote as AccountVote, blockNumber)
+    await createOrUpdateVote(callOrigin, referendumIndex.toString(), accountVote as AccountVote, block)
 }
 
 export async function handleRemoveVoteHandler(extrinsic: SubstrateExtrinsic): Promise<void> {
@@ -109,28 +106,28 @@ export function isRemoveVote(call: CallBase<AnyTuple>): boolean {
 	return call.section == "convictionVoting" && call.method == "removeVote"
 }
 
-async function createOrUpdateVote(voter: string, referendumIndex: string, accountVote: AccountVote, blockNumber: number): Promise<void> {
+async function createOrUpdateVote(voter: string, referendumIndex: string, accountVote: AccountVote, block: SubstrateBlock): Promise<void> {
 	const votingId = getVotingId(voter, referendumIndex)
 
 	var voting = await CastingVoting.get(votingId)
 
 	if (voting == undefined) {
-		await createVoting(voter, referendumIndex, accountVote, blockNumber)
+		await createVoting(voter, referendumIndex, accountVote, block)
 	} else {
-		await updateVoting(voting, accountVote, blockNumber)
+		await updateVoting(voting, accountVote, block)
 	}
 }
 
-async function createVoting(voter: string, referendumIndex: string, accountVote: AccountVote, blockNumber: number): Promise<void> {
+async function createVoting(voter: string, referendumIndex: string, accountVote: AccountVote, block: SubstrateBlock): Promise<void> {
 	let delegateId = getDelegateId(voter)
 
 	const voting = CastingVoting.create({
 		id: getVotingId(voter, referendumIndex),
 		voter: voter,
 		referendumId: referendumIndex,
-		at: blockNumber,
+		at: block.block.header.number.toNumber(),
 		delegateId: delegateId,
-		standardVote: extractStandardVote(accountVote),
+		standardVote: extractStandardVote(accountVote, block),
 		splitVote: extractSplitVote(accountVote),
 		splitAbstainVote: extractSplitAbstainVote(accountVote)
 	})
@@ -147,11 +144,11 @@ async function createVoting(voter: string, referendumIndex: string, accountVote:
 	}
 }
 
-async function updateVoting(voting: CastingVoting, accountVote: AccountVote, blockNumber: number): Promise<void> {
+async function updateVoting(voting: CastingVoting, accountVote: AccountVote, block: SubstrateBlock): Promise<void> {
 	const isStandardBefore = isStandard(voting)
 
-	voting.at = blockNumber
-	voting.standardVote = extractStandardVote(accountVote)
+	voting.at = block.block.header.number.toNumber()
+	voting.standardVote = extractStandardVote(accountVote, block)
 	voting.splitVote = extractSplitVote(accountVote)
 	voting.splitAbstainVote = extractSplitAbstainVote(accountVote)
 
@@ -215,14 +212,15 @@ async function getDelegatorVotingByParentId(parentId: string): Promise<Delegator
 	return await DelegatorVoting.getByParentId(parentId, unboundedQueryOptions);
 }
 
-function extractStandardVote(accountVote: AccountVote): StandardVote {
+function extractStandardVote(accountVote: AccountVote, block: SubstrateBlock): StandardVote {
 	if (accountVote.isStandard) {
 		const standardVote = accountVote.asStandard
 		return {
 			aye: standardVote.vote.isAye,
 			vote: {
 				conviction: standardVote.vote.conviction.type,
-				amount: standardVote.balance.toString()
+				amount: standardVote.balance.toString(),
+				timestamp: timestamp(block)
 			}
 		}
 	} else {

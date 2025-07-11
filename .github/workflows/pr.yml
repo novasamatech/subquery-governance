@@ -16,5 +16,7 @@ jobs:
         run: yarn install
       - name: Codegen
         run: yarn codegen
+      - name: Type check
+        run: yarn types
       - name: Build
         run: yarn build
