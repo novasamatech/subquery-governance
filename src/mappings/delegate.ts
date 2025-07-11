@@ -59,7 +59,6 @@ export async function handleDelegate(call: CallBase<AnyTuple>, callOriginAddress
     const convictionVote: ConvictionVote = {
         conviction: conviction.toString(),
         amount: amount.toString(),
-        timestamp: timestamp(block)
     }
 
     const delegation = Delegation.create({
