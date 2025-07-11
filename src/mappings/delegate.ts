@@ -15,16 +15,17 @@ import {Codec} from "@polkadot/types-codec/types/codec";
 import {CallBase} from "@polkadot/types/types/calls";
 import {AnyTuple} from "@polkadot/types/types/codec";
 import {unboundedQueryOptions} from "./common";
+import { timestamp } from "../utilities/timestamp";
 
 export async function handleDelegateHandler(extrinsic: SubstrateExtrinsic): Promise<void> {
-    await handleDelegate(extrinsic.extrinsic.method, extrinsic.extrinsic.signer.toString())
+    await handleDelegate(extrinsic.extrinsic.method, extrinsic.extrinsic.signer.toString(), extrinsic.block)
 }
 
 function bigDecimalToBigInt(bigDecimal: Big): bigint {
     return BigInt(bigDecimal.toFixed(0, Big.roundUp))
 }
 
-export async function handleDelegate(call: CallBase<AnyTuple>, callOriginAddress: string): Promise<void> {
+export async function handleDelegate(call: CallBase<AnyTuple>, callOriginAddress: string, block: SubstrateBlock): Promise<void> {
     const delegatorAddress = callOriginAddress
     const [trackId, to, conviction, amount] = call.args
 
@@ -57,7 +58,7 @@ export async function handleDelegate(call: CallBase<AnyTuple>, callOriginAddress
 
     const convictionVote: ConvictionVote = {
         conviction: conviction.toString(),
-        amount: amount.toString()
+        amount: amount.toString(),
     }
 
     const delegation = Delegation.create({

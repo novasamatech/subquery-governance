@@ -29,6 +29,7 @@ type Referendum @entity {
 type CastingVoting @entity {
   id: ID!
   at: Int!
+  timestamp: Int!
   voter: String! @index
   delegate: Delegate @index
   referendum: Referendum!

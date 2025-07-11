@@ -25,9 +25,7 @@ export async function visitNestedCalls(extrinsic: SubstrateExtrinsic) {
 }
 
 async function handleNestedVote(visitedCall: VisitedCall): Promise<void> {
-    let blockNumber = visitedCall.extrinsic.block.block.header.number.toNumber()
-
-    await handleVote(visitedCall.call, visitedCall.origin, blockNumber)
+    await handleVote(visitedCall.call, visitedCall.origin, visitedCall.extrinsic.block)
 }
 
 async function handleNestedRemoveVote(visitedCall: VisitedCall): Promise<void> {
@@ -35,7 +33,7 @@ async function handleNestedRemoveVote(visitedCall: VisitedCall): Promise<void> {
 }
 
 async function handleNestedDelegate(visitedCall: VisitedCall): Promise<void> {
-    await handleDelegate(visitedCall.call, visitedCall.origin)
+    await handleDelegate(visitedCall.call, visitedCall.origin, visitedCall.extrinsic.block)
 }
 
 async function handleNestedUndelegate(visitedCall: VisitedCall): Promise<void> {
