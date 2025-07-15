@@ -33,7 +33,7 @@
   "dependencies": {
     "@types/big.js": "^6.1.6",
     "big.js": "^6.2.1",
-    "subquery-call-visitor": "^1.2.7"
+    "subquery-call-visitor": "1.3.3"
   },
   "exports": {
     "moonbeamChaintypes": "./chainTypes/moonbeamChaintypes.ts"
