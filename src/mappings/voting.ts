@@ -15,7 +15,7 @@ import { AccountVote } from "./votingTypes"
 import { getAllActiveReferendums } from "./referendum"
 import {CallBase} from "@polkadot/types/types/calls";
 import {AnyTuple} from "@polkadot/types/types/codec";
-import {getDelegateId} from "./delegate";
+import {getDelegate, getDelegateId} from "./delegate";
 import {unboundedQueryOptions} from "./common";
 import { timestamp } from "../utilities/timestamp";
 
@@ -121,13 +121,22 @@ async function createOrUpdateVote(voter: string, referendumIndex: string, accoun
 async function createVoting(voter: string, referendumIndex: string, accountVote: AccountVote, block: SubstrateBlock): Promise<void> {
 	let delegateId = getDelegateId(voter)
 
+	let delegate = await getDelegate(delegateId)
+
+	let delegateIdInVoting: string | undefined = undefined
+	if (delegate) {
+		delegateIdInVoting = delegateId
+	}
+
+	logger.info(`Adding new CastingVoting. voter=${voter}, delegateId=${delegateIdInVoting}`)
+
 	const voting = CastingVoting.create({
 		id: getVotingId(voter, referendumIndex),
 		timestamp: timestamp(block),
 		voter: voter,
 		referendumId: referendumIndex,
 		at: block.block.header.number.toNumber(),
-		delegateId: delegateId,
+		delegateId: delegateIdInVoting,
 		standardVote: extractStandardVote(accountVote),
 		splitVote: extractSplitVote(accountVote),
 		splitAbstainVote: extractSplitAbstainVote(accountVote)
@@ -166,6 +175,40 @@ async function updateVoting(voting: CastingVoting, accountVote: AccountVote, blo
 	} else if (isStandardBefore && !isStandardAfter) {
 		await clearDelegatorVotings(voting.id)
 	}
+}
+
+export async function addDelegateIdToVotings(delegateAddress: string): Promise<void> {
+	logger.info(`Adding delegate id to votings of ${delegateAddress}`)
+
+	const delegateId = getDelegateId(delegateAddress)
+
+	await updateDelegateIdForCastingVotes(delegateAddress, (vote) => {
+		vote.delegateId = delegateId
+	})
+}
+
+export async function removeDelegateIdFromVotings(delegateAddress: string): Promise<void> {
+	logger.info(`Removing delegate id from votings of ${delegateAddress}`)
+
+	await updateDelegateIdForCastingVotes(delegateAddress, (vote) => {
+		vote.delegateId = null
+	})
+}
+
+async function updateDelegateIdForCastingVotes(
+	voter: string,
+	update: (vote: CastingVoting) => void
+): Promise<void> {
+	const votes = await getVotingsByVoter(voter)
+
+	for (const vote of votes) {
+		update(vote)
+		await vote.save()
+	}
+}
+
+async function getVotingsByVoter(voterAddress: string): Promise<CastingVoting[]> {
+	return CastingVoting.getByVoter(voterAddress, unboundedQueryOptions)
 }
 
 async function addDelegatorVotings(parentVotingId: string, delegateId: string, trackId: number): Promise<void> {

@@ -4,7 +4,8 @@ import {
 } from "@subql/types";
 
 import {
-    addDelegatorActiveVotings,
+    addDelegateIdToVotings,
+    addDelegatorActiveVotings, removeDelegateIdFromVotings,
     removeDelegatorActiveVotings
 } from "./voting"
 
@@ -15,7 +16,6 @@ import {Codec} from "@polkadot/types-codec/types/codec";
 import {CallBase} from "@polkadot/types/types/calls";
 import {AnyTuple} from "@polkadot/types/types/codec";
 import {unboundedQueryOptions} from "./common";
-import { timestamp } from "../utilities/timestamp";
 
 export async function handleDelegateHandler(extrinsic: SubstrateExtrinsic): Promise<void> {
     await handleDelegate(extrinsic.extrinsic.method, extrinsic.extrinsic.signer.toString(), extrinsic.block)
@@ -34,7 +34,8 @@ export async function handleDelegate(call: CallBase<AnyTuple>, callOriginAddress
     const delegatorVotes = convictionVotes(conviction.toString(), amount.toString())
 
     let delegate = await Delegate.get(delegateAddress)
-    if (delegate == undefined) {
+    const isNewDelegate = delegate == undefined
+    if (isNewDelegate) {
         delegate = Delegate.create({
             id: delegateId,
             accountId: delegateAddress,
@@ -72,11 +73,19 @@ export async function handleDelegate(call: CallBase<AnyTuple>, callOriginAddress
     await delegation.save()
     await delegate.save()
 
+    if (isNewDelegate) {
+        await addDelegateIdToVotings(delegateAddress)
+    }
+
     await addDelegatorActiveVotings(delegateAddress, delegatorAddress, Number(trackId.toString()), convictionVote)
 }
 
 export async function handleUndelegateHandler(extrinsic: SubstrateExtrinsic): Promise<void> {
     await handleUndelegate(extrinsic.extrinsic.method, extrinsic.extrinsic.signer.toString())
+}
+
+export async function getDelegate(delegateId: string): Promise<Delegate | undefined> {
+    return Delegate.get(delegateId)
 }
 
 export async function handleUndelegate(call: CallBase<AnyTuple>, callOriginAddress: string): Promise<void> {
@@ -108,6 +117,8 @@ export async function handleUndelegate(call: CallBase<AnyTuple>, callOriginAddre
     delegate.delegatorVotes = BigInt(bigDecimalToBigInt(newDelegatorVotes))
 
     if (delegate.delegators == 0) {
+        await removeDelegateIdFromVotings(delegation.delegateId)
+
         await Delegate.remove(delegation.delegateId)
     } else {
         await delegate.save()
