@@ -15,7 +15,6 @@ schema:
 network:
   chainId: "0xb0a8d493285c2df73290dfb7e61f870f17b41801197a149ca93654499ea3dafe"
   endpoint: "wss://kusama.api.onfinality.io/public-ws"
-  dictionary: "https://api.subquery.network/sq/subquery/kusama-dictionary"
 dataSources:
   - kind: substrate/Runtime
     startBlock: 15426830
