@@ -182,7 +182,7 @@ export async function addDelegateIdToVotings(delegateAddress: string): Promise<v
 
 	const delegateId = getDelegateId(delegateAddress)
 
-	await updateDelegateIdForCastingVotes(delegateAddress, (vote)  =>{
+	await updateDelegateIdForCastingVotes(delegateAddress, (vote) => {
 		vote.delegateId = delegateId
 	})
 }
@@ -190,7 +190,7 @@ export async function addDelegateIdToVotings(delegateAddress: string): Promise<v
 export async function removeDelegateIdFromVotings(delegateAddress: string): Promise<void> {
 	logger.info(`Removing delegate id from votings of ${delegateAddress}`)
 
-	await updateDelegateIdForCastingVotes(delegateAddress, (vote)  =>{
+	await updateDelegateIdForCastingVotes(delegateAddress, (vote) => {
 		vote.delegateId = null
 	})
 }
