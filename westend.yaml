@@ -1,5 +1,5 @@
 specVersion: 1.0.0
-name: nova-governance-polkadot
+name: nova-governance-westend
 version: 0.0.1
 runner:
   node:
@@ -13,13 +13,11 @@ repository: "https://github.com/nova-wallet/subquery-governance"
 schema:
   file: ./schema.graphql
 network:
-  chainId: "0x91b171bb158e2d3848fa23a9f1c25182fb8e20313b2c1eb49219da7a70ce90c3"
-  endpoint: "wss://polkadot.api.onfinality.io/public-ws"
+  chainId: "0xe143f23803ac50e8f6f8e62695d1ce9e4e1d68aa36c1cd2cfd15340213f3423e"
+  endpoint: "wss://westend-rpc.dwellir.com"
 dataSources:
   - kind: substrate/Runtime
-    startBlock: 15978410
-    # first delegation at 15978410  https://polkadot.subscan.io/extrinsic/15978410-2
-    # first referendum 15978430  https://polkadot.subscan.io/extrinsic/15978430-3
+    startBlock: 18500000
     mapping:
       file: ./dist/index.js
       handlers:
