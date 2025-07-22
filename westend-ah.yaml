@@ -1,0 +1,142 @@
+specVersion: 1.0.0
+name: nova-governance-westend-ah
+version: 0.0.1
+runner:
+  node:
+    name: "@subql/node"
+    version: "*"
+  query:
+    name: "@subql/query"
+    version: "*"
+description: Project for tracking direct and delegated votings gor OpenGov
+repository: "https://github.com/nova-wallet/subquery-governance"
+schema:
+  file: ./schema.graphql
+network:
+  chainId: "0x67f9723393ef76214df0118c34bbbd3dbebc8ed46a10973a8c969d48fe7598c9"
+  endpoint: "wss://asset-hub-westend-rpc.n.dwellir.com"
+dataSources:
+  - kind: substrate/Runtime
+    startBlock: 11736080
+    mapping:
+      file: ./dist/index.js
+      handlers:
+        - handler: handleReferendumSubmission
+          kind: substrate/EventHandler
+          filter:
+            module: referenda
+            method: Submitted
+
+        - handler: handleVoteHandler
+          kind: substrate/CallHandler
+          filter:
+            module: convictionVoting
+            method: vote
+            success: true
+
+        - handler: handleRemoveVoteHandler
+          kind: substrate/CallHandler
+          filter:
+            module: convictionVoting
+            method: removeVote
+            success: true
+
+        - handler: handleDelegateHandler
+          kind: substrate/CallHandler
+          filter:
+            module: convictionVoting
+            method: delegate
+            success: true
+
+        - handler: handleUndelegateHandler
+          kind: substrate/CallHandler
+          filter:
+            module: convictionVoting
+            method: undelegate
+            success: true
+
+        - handler: handleTerminal
+          kind: substrate/EventHandler
+          filter:
+            module: referenda
+            method: Confirmed
+
+        - handler: handleTerminal
+          kind: substrate/EventHandler
+          filter:
+            module: referenda
+            method: Rejected
+
+        - handler: handleTerminal
+          kind: substrate/EventHandler
+          filter:
+            module: referenda
+            method: Killed
+
+        - handler: handleTerminal
+          kind: substrate/EventHandler
+          filter:
+            module: referenda
+            method: Cancelled
+
+        - handler: handleTerminal
+          kind: substrate/EventHandler
+          filter:
+            module: referenda
+            method: TimedOut
+
+        - handler: handleNestedCalls
+          kind: substrate/CallHandler
+          filter:
+            module: proxy
+            method: proxy
+            success: true
+
+        - handler: handleNestedCalls
+          kind: substrate/CallHandler
+          filter:
+            module: proxy
+            method: proxyAnnounced
+            success: true
+
+        - handler: handleNestedCalls
+          kind: substrate/CallHandler
+          filter:
+            module: utility
+            method: batch
+            success: true
+
+        - handler: handleNestedCalls
+          kind: substrate/CallHandler
+          filter:
+            module: utility
+            method: batchAll
+            success: true
+
+        - handler: handleNestedCalls
+          kind: substrate/CallHandler
+          filter:
+            module: utility
+            method: forceBatch
+            success: true
+
+        - handler: handleNestedCalls
+          kind: substrate/CallHandler
+          filter:
+            module: multisig
+            method: asMulti
+            success: true
+
+        - handler: handleNestedCalls
+          kind: substrate/CallHandler
+          filter:
+            module: multisig
+            method: asMultiThreshold1
+            success: true
+
+        - handler: handleNestedCalls
+          kind: substrate/CallHandler
+          filter:
+            module: utility
+            method: asDerivative
+            success: true

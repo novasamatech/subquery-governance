@@ -5,6 +5,7 @@ on:
     branches:
       - master
       - dev
+      - add-westend-ah
     tags:
       - 'v*'
 
