@@ -17,7 +17,7 @@ network:
   endpoint: "wss://asset-hub-westend-rpc.n.dwellir.com"
 dataSources:
   - kind: substrate/Runtime
-    startBlock: 11736080
+    startBlock: 11716733
     mapping:
       file: ./dist/index.js
       handlers:
