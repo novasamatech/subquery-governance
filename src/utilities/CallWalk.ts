@@ -9,7 +9,7 @@ const callWalk = CreateCallWalk();
 const visitor = CreateCallVisitorBuilder()
   .on("utility", ["batch", "batchAll", "forceBatch"], (extrinsic, context) => {
     const calls = extrinsic.call.args.at(0);
-    if (Array.isArray(calls) && calls.length > 50) {
+    if (Array.isArray(calls) && calls.length > 1000) {
       // we're skipping large batches, something terrible happens inside anyway
       context.stop();
     }
