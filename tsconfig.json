@@ -9,8 +9,10 @@
     "module": "commonjs",
     "outDir": "dist",
     "rootDir": ".",
-    "target": "es2017",
-    "skipLibCheck": true
+    "target": "es2022",
+    "strict": true,
+    "noPropertyAccessFromIndexSignature": true,
+    "noUncheckedIndexedAccess": true
   },
   "include": ["src/**/*", "node_modules/@subql/types/dist/global.d.ts"]
 }
