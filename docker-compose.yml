@@ -12,13 +12,16 @@ services:
     environment:
       POSTGRES_PASSWORD: postgres
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      test: [ "CMD-SHELL", "pg_isready -U postgres" ]
       interval: 5s
       timeout: 5s
       retries: 5
 
   subquery-node:
-    image: onfinality/subql-node:v5.6.0
+    build:
+      context: .
+    container_name: "node-${PROJECT_PATH}"
+    image: subquerynetwork/subql-node-substrate:v5.6.0
     depends_on:
       "postgres":
         condition: service_healthy
@@ -32,19 +35,23 @@ services:
     volumes:
       - ./:/app
     command:
-      - -f=/app
+      - ${SUB_COMMAND:-} # set SUB_COMMAND env variable to "test" to run tests
+      - -f=/app/${PROJECT_PATH}
       - --db-schema=app
       - --disable-historical=true
       - --query-limit=1000000
-      - --batch-size=20
+      - --batch-size=1
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://subquery-node:3000/ready"]
+      test: [ "CMD", "curl", "-f", "http://subquery-node:3000/ready" ]
       interval: 3s
       timeout: 5s
       retries: 10
 
   graphql-engine:
-    image: onfinality/subql-query:latest
+    build:
+      context: .
+    image: subquerynetwork/subql-query:latest
+    container_name: "query-${PROJECT_PATH}"
     ports:
       - 3000:3000
     depends_on:
