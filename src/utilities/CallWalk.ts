@@ -11,6 +11,13 @@ const visitor = CreateCallVisitorBuilder()
     const calls = extrinsic.call.args.at(0);
     if (Array.isArray(calls) && calls.length > 1000) {
       // we're skipping large batches, something terrible happens inside anyway
+      logger.info(`Skipping block ${extrinsic.extrinsic.block.block.header.number.toNumber()} because of calls length ${calls.length}`);
+      context.stop();
+    }
+
+    if (Array.isArray(extrinsic.events) && extrinsic.events.length > 1000) {
+      // sometimes we can recognize a junk block only by events length
+      logger.info(`Skipping block ${extrinsic.extrinsic.block.block.header.number.toNumber()} because of events length ${extrinsic.events.length}`);
       context.stop();
     }
   })
