@@ -38,7 +38,9 @@ services:
       - ${SUB_COMMAND:-} # set SUB_COMMAND env variable to "test" to run tests
       - -f=/app/${PROJECT_PATH}
       - --db-schema=app
-      - --batch-size=10
+      - --disable-historical=true
+      - --query-limit=1000000
+      - --batch-size=1
     healthcheck:
       test: [ "CMD", "curl", "-f", "http://subquery-node:3000/ready" ]
       interval: 3s
