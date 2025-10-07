@@ -17,8 +17,7 @@ network:
   endpoint: "wss://asset-hub-kusama-rpc.n.dwellir.com"
 dataSources:
   - kind: substrate/Runtime
-    # calculated approximately. It approximately corresponds to the moment before the start of the migration on the relaychain.
-    startBlock: 11073800
+    startBlock: 11147500
     mapping:
       file: ./dist/index.js
       handlers:
