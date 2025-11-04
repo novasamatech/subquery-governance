@@ -18,7 +18,7 @@ network:
 dataSources:
   - kind: substrate/Runtime
     # AH migration start block
-    startBlock: TODO: add
+    startBlock: 10254470
     mapping:
       file: ./dist/index.js
       handlers:
