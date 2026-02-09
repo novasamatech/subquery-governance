@@ -23,9 +23,9 @@
   "license": "MIT",
   "devDependencies": {
     "@jest/globals": "^29.3.1",
-    "@polkadot/api": "^10",
-    "@subql/cli": "5.4.0",
-    "@subql/types": "3.11.4",
+    "@polkadot/api": "^16",
+    "@subql/cli": "latest",
+    "@subql/types": "latest",
     "jest": "^29.3.1",
     "moonbeam-types-bundle": "^2.0.10",
     "ts-jest": "^29.0.3",
@@ -37,7 +37,24 @@
     "big.js": "^6.2.1",
     "subquery-call-visitor": "1.4.0"
   },
+  "resolutions": {
+    "@polkadot/api": "16.5.4",
+    "@polkadot/api-augment": "16.5.4",
+    "@polkadot/api-base": "16.5.4",
+    "@polkadot/api-derive": "16.5.4",
+    "@polkadot/rpc-augment": "16.5.4",
+    "@polkadot/rpc-core": "16.5.4",
+    "@polkadot/rpc-provider": "16.5.4",
+    "@polkadot/types": "16.5.4",
+    "@polkadot/types-augment": "16.5.4",
+    "@polkadot/types-codec": "16.5.4",
+    "@polkadot/types-create": "16.5.4",
+    "@polkadot/types-known": "16.5.4"
+  },
   "exports": {
-    "moonbeamChaintypes": "./chainTypes/moonbeamChaintypes.ts"
+    "moonbeamChaintypes": "./chainTypes/moonbeamChaintypes.ts",
+    "kusamaAhChaintypes": "./chainTypes/kusamaAhChaintypes.ts",
+    "polkadotAhChaintypes": "./chainTypes/polkadotAhChaintypes.ts",
+    "westendAhChaintypes": "./chainTypes/westendAhChaintypes.ts"
   }
 }

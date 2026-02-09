@@ -15,6 +15,8 @@ schema:
 network:
   chainId: "0x48239ef607d7928874027a43a67689209727dfb3d3dc5e5b03a39bdc2eda771a"
   endpoint: "wss://asset-hub-kusama-rpc.n.dwellir.com"
+  chaintypes:
+    file: ./dist/kusamaAhChaintypes.js
 dataSources:
   - kind: substrate/Runtime
     startBlock: 11147500
