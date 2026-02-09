@@ -6,14 +6,15 @@
     "declaration": true,
     "importHelpers": true,
     "resolveJsonModule": true,
-    "module": "commonjs",
+    "module": "node16",
+    "moduleResolution": "node16",
     "outDir": "dist",
     "rootDir": ".",
     "target": "es2022",
     "strict": true,
     "noPropertyAccessFromIndexSignature": true,
     "noUncheckedIndexedAccess": true,
-    "skipLibCheck": true
+    "skipLibCheck": true,
   },
-  "include": ["src/**/*", "node_modules/@subql/types/dist/global.d.ts"]
+  "include": ["src/**/*", "chainTypes/**/*", "node_modules/@subql/types/dist/global.d.ts"],
 }

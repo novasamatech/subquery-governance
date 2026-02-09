@@ -15,6 +15,8 @@ schema:
 network:
   chainId: "0x67f9723393ef76214df0118c34bbbd3dbebc8ed46a10973a8c969d48fe7598c9"
   endpoint: "wss://asset-hub-westend-rpc.n.dwellir.com"
+  chaintypes:
+    file: ./dist/westendAhChaintypes.js
 dataSources:
   - kind: substrate/Runtime
     startBlock: 11716733
