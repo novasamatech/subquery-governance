@@ -5996,10 +5996,9 @@ strip-json-comments@~2.0.1:
   resolved "https://registry.yarnpkg.com/strip-json-comments/-/strip-json-comments-2.0.1.tgz#3c531942e908c2697c0ec344858c286c7ca0a60a"
   integrity sha512-4gB8na07fecVVkOI6Rs4e7T6NOTki5EmL7TUduTs6bu3EdnSycntVJ4re8kgZA+wx9IueI2Y11bfbgwtzuE0KQ==
 
-subquery-call-visitor@1.4.2:
+subquery-call-visitor@nova-wallet/subquery-call-visitor#fix/ignore-checksum-in-as-derivative:
   version "1.4.2"
-  resolved "https://registry.yarnpkg.com/subquery-call-visitor/-/subquery-call-visitor-1.4.2.tgz#b6a2535681a83f10fcd6126282370c22e15481fd"
-  integrity sha512-CHmGgkwUiO8jMdWi7hBjDHxMgovzMP+QfPYwyxvH5KM8aT4wQgQipssI5TdbpqXWCwJBBUq3R6JIuTAfHjA/fQ==
+  resolved "https://codeload.github.com/nova-wallet/subquery-call-visitor/tar.gz/7b072997d0a2ac1b8a7601b67e598cae36ba7883"
   dependencies:
     "@types/big.js" "^6.1.6"
     big.js "^6.2.1"
