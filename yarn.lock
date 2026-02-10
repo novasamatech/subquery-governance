@@ -5998,7 +5998,7 @@ strip-json-comments@~2.0.1:
 
 subquery-call-visitor@nova-wallet/subquery-call-visitor#fix/ignore-checksum-in-as-derivative:
   version "1.4.2"
-  resolved "https://codeload.github.com/nova-wallet/subquery-call-visitor/tar.gz/7b072997d0a2ac1b8a7601b67e598cae36ba7883"
+  resolved "https://codeload.github.com/nova-wallet/subquery-call-visitor/tar.gz/cc6cb02386fcfdaab32409c5b7a982da416b2887"
   dependencies:
     "@types/big.js" "^6.1.6"
     big.js "^6.2.1"
