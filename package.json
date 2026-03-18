@@ -28,20 +28,21 @@
     "@subql/types": "latest",
     "jest": "^29.3.1",
     "moonbeam-types-bundle": "^2.0.10",
+    "prettier": "3.6.2",
     "ts-jest": "^29.0.3",
-    "typescript": "5.8.3",
-    "prettier": "3.6.2"
+    "typescript": "5.8.3"
   },
   "dependencies": {
     "@types/big.js": "^6.1.6",
     "big.js": "^6.2.1",
-    "subquery-call-visitor": "1.4.0"
+    "subquery-call-visitor": "1.4.4"
   },
   "resolutions": {
     "@polkadot/api": "16.5.4",
     "@polkadot/api-augment": "16.5.4",
     "@polkadot/api-base": "16.5.4",
     "@polkadot/api-derive": "16.5.4",
+    "@polkadot/keyring": "14.0.1",
     "@polkadot/rpc-augment": "16.5.4",
     "@polkadot/rpc-core": "16.5.4",
     "@polkadot/rpc-provider": "16.5.4",

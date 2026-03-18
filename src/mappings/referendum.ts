@@ -16,11 +16,15 @@ export async function handleReferendumSubmission(event: SubstrateEvent): Promise
   });
 
   await referendum.save();
+
+  logger.info(`Referendum submitted: index=${index}, trackId=${track}`);
 }
 
 /// We can handle all terminal events Approved/Rejected/Cancelled/Killed/TimedOut here because they have index as first arg
 export async function handleTerminal(event: SubstrateEvent): Promise<void> {
   const [index] = getEventData(event) as [Codec];
+
+  logger.info(`Referendum terminal: index=${index}, event=${event.event.method}`);
 
   await markReferendumFinished(index.toString());
 }

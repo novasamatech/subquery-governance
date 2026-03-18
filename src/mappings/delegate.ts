@@ -65,6 +65,8 @@ export async function handleDelegate(call: CallBase<AnyTuple>, callOriginAddress
   await delegation.save();
   await delegate.save();
 
+  logger.info(`Delegate: delegator=${delegatorAddress}, delegate=${delegateAddress}, trackId=${trackId}, conviction=${conviction}, amount=${amount}`);
+
   if (delegate === undefined) {
     await addDelegateIdToVotings(delegateAddress);
   }
@@ -88,6 +90,8 @@ export async function handleUndelegate(call: CallBase<AnyTuple>, callOriginAddre
 
   const delegation = await Delegation.get(delegationId);
   if (delegation == undefined) return;
+
+  logger.info(`Undelegate: delegator=${delegatorAddress}, trackId=${trackId}`);
 
   await Delegation.remove(delegationId);
 

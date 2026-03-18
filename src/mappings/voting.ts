@@ -39,6 +39,8 @@ export async function handleRemoveVote(call: CallBase<AnyTuple>, callOrigin: str
   if (referendum == undefined) return;
 
   if (!referendum.finished) {
+    logger.info(`Removing vote: voter=${callOrigin}, referendum=${referendumIndex}`);
+
     const votingId = getVotingId(callOrigin, referendumIndex.toString());
 
     await CastingVoting.remove(votingId);
@@ -120,7 +122,7 @@ async function createVoting(voter: string, referendumIndex: string, accountVote:
     delegateIdInVoting = delegateId;
   }
 
-  logger.info(`Adding new CastingVoting. voter=${voter}, delegateId=${delegateIdInVoting}`);
+  logger.info(`Adding new CastingVoting. voter=${voter}, referendum=${referendumIndex}, delegateId=${delegateIdInVoting}`);
 
   const voting = CastingVoting.create({
     id: getVotingId(voter, referendumIndex),
