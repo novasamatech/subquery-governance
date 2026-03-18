@@ -9,6 +9,7 @@ dist/
 .data
 # lock files
 package-lock.json
+.yarn
 
 # Compiled Java class files
 *.class
