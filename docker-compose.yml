@@ -12,16 +12,14 @@ services:
     environment:
       POSTGRES_PASSWORD: postgres
     healthcheck:
-      test: [ "CMD-SHELL", "pg_isready -U postgres" ]
+      test: [ "CMD-SHELL", "pg_isready -h 127.0.0.1 -U postgres -d postgres" ]
       interval: 5s
       timeout: 5s
       retries: 5
 
   subquery-node:
-    build:
-      context: .
     container_name: "node-${PROJECT_PATH}"
-    image: subquerynetwork/subql-node-substrate:v5.6.0
+    image: ${SUBQL_NODE_IMAGE:?Use --env-file versions.env or export SUBQL_NODE_IMAGE}
     depends_on:
       "postgres":
         condition: service_healthy
@@ -37,7 +35,7 @@ services:
     command:
       - ${SUB_COMMAND:-} # set SUB_COMMAND env variable to "test" to run tests
       - -f=/app/${PROJECT_PATH}
-      - --db-schema=app
+      - --db-schema=${DB_SCHEMA:-app}
       - --disable-historical=true
       - --query-limit=1000000
       - --batch-size=1
@@ -48,8 +46,6 @@ services:
       retries: 10
 
   graphql-engine:
-    build:
-      context: .
     image: subquerynetwork/subql-query:latest
     container_name: "query-${PROJECT_PATH}"
     ports:
@@ -67,6 +63,6 @@ services:
       DB_HOST: postgres
       DB_PORT: 5432
     command:
-      - --name=app
+      - --name=${DB_SCHEMA:-app}
       - --playground
       - --indexer=http://subquery-node:3000

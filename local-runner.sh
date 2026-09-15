@@ -1,24 +1,18 @@
 #!/bin/bash
 
+set -euo pipefail
+
 SCRIPT_PATH=$(dirname "$0")
+cd "$SCRIPT_PATH"
 
-cd ${SCRIPT_PATH}
-
-if [ -z $1 ]; then
-    echo "Provide a path to project-{name}.yaml file"
+if [ -z "${1:-}" ] || [ ! -f "$1" ]; then
+    echo "Provide a path to an existing project manifest, e.g. polkadot-ah.yaml" >&2
     exit 1
 fi
 
-export PROJECT_PATH=$1
+export PROJECT_PATH="$1"
 
-docker rm -f $(docker-compose ps -a -q)
-sudo rm -rf .data/
-sudo rm -rf dist/
-
-# If any command bellow will fail - script will stop
-set -e
-
-yarn
+yarn install --immutable
 yarn codegen
 yarn build
 yarn start:docker
