@@ -8,6 +8,7 @@ on:
     tags:
       - "v*"
   pull_request:
+  workflow_dispatch:
 
 env:
   REGISTRY: ghcr.io
@@ -18,14 +19,14 @@ jobs:
     permissions:
       contents: read
       packages: write
-    strategy:
-      fail-fast: false
-      matrix:
-        node-js-image-version: [24]
-        subql-node-image-version: [v6.4.6]
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+      - name: Load image versions
+        run: |
+          source versions.env
+          printf '%s\n' "NODE_VERSION=$NODE_VERSION" "SUBQL_NODE_VERSION=$SUBQL_NODE_VERSION" \
+            "NODE_IMAGE=$NODE_IMAGE" "SUBQL_PRODUCTION_IMAGE=$SUBQL_PRODUCTION_IMAGE" >> "$GITHUB_ENV"
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v3
       - name: Set up Docker Buildx
@@ -54,15 +55,16 @@ jobs:
           echo "IMAGE_LABEL=$SANITIZED_REF_NAME" >> "$GITHUB_ENV"
       - name: Set full name of the Docker image
         run: |
-          echo "FULL_IMAGE_NAME=${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ env.IMAGE_LABEL }}-node-js-${{ matrix.node-js-image-version }}-subql-node-${{ matrix.subql-node-image-version }}" >> "$GITHUB_ENV"
+          echo "FULL_IMAGE_NAME=${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ env.IMAGE_LABEL }}-node-js-${{ env.NODE_VERSION }}-subql-node-${{ env.SUBQL_NODE_VERSION }}" >> "$GITHUB_ENV"
       - name: Build and push Docker image
         uses: docker/build-push-action@v6
         with:
           file: docker/subql-node-Dockerfile
+          context: .
           push: ${{ github.event_name != 'pull_request' }}
           load: true
           labels: ${{ steps.meta.outputs.labels }}
           build-args: |
-            NODE_JS_IMAGE_VERSION=${{ matrix.node-js-image-version }}-alpine
-            SUBQL_NODE_IMAGE_VERSION=${{ matrix.subql-node-image-version }}
+            NODE_IMAGE=${{ env.NODE_IMAGE }}
+            SUBQL_NODE_IMAGE=${{ env.SUBQL_PRODUCTION_IMAGE }}
           tags: ${{ env.FULL_IMAGE_NAME }}

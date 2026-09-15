@@ -1,84 +1,87 @@
-# SubQuery - Starter Package
+# SubQuery Governance
 
-The Starter Package is an example that you can use as a starting point for developing your SubQuery project.
-A SubQuery package defines which data The SubQuery will index from the Substrate blockchain, and how it will store it.
+SubQuery indexer for OpenGov referenda, votes and delegations across Substrate networks.
+Network manifests live in the repository root; Asset Hub manifests are
+`polkadot-ah.yaml`, `kusama-ah.yaml` and `westend-ah.yaml`.
 
-## Preparation
+## Development
 
-#### Environment
+Use the Node version defined in [versions.env](versions.env). Corepack selects the Yarn
+version pinned in `package.json`; the SubQuery CLI is installed with the project dependencies.
+Local indexing also requires Docker and `docker-compose`.
 
-- [Typescript](https://www.typescriptlang.org/) are required to compile project and define types.
+Run from the repository root:
 
-- Both SubQuery CLI and generated Project have dependencies and require [Node](https://nodejs.org/en/).
-
-#### Install the SubQuery CLI
-
-Install SubQuery CLI globally on your terminal by using NPM:
-
-```
-npm install -g @subql/cli
-```
-
-Run help to see available commands and usage provide by CLI
-
-```
-subql help
-```
-
-## Initialize the starter package
-
-Inside the directory in which you want to create the SubQuery project, simply replace `project-name` with your project name and run the command:
-
-```
-subql init --starter project-name
-```
-
-Then you should see a folder with your project name has been created inside the directory, you can use this as the start point of your project. And the files should be identical as in the [Directory Structure](https://doc.subquery.network/directory_structure.html).
-
-Last, under the project directory, run following command to install all the dependency.
-
-```
-yarn install
-```
-
-## Configure your project
-
-In the starter package, we have provided a simple example of project configuration. You will be mainly working on the following files:
-
-- The Manifest in `project.yaml`
-- The GraphQL Schema in `schema.graphql`
-- The Mapping functions in `src/mappings/` directory
-
-For more information on how to write the SubQuery,
-check out our doc section on [Define the SubQuery](https://doc.subquery.network/define_a_subquery.html)
-
-#### Code generation
-
-In order to index your SubQuery project, it is mandatory to build your project first.
-Run this command under the project directory.
-
-```
+```bash
+corepack enable
+yarn install --immutable
 yarn codegen
-```
-
-## Build the project
-
-In order to deploy your SubQuery project to our hosted service, it is mandatory to pack your configuration before upload.
-Run pack command from root directory of your project will automatically generate a `your-project-name.tgz` file.
-
-```
 yarn build
 ```
+
+The schema is in [schema.graphql](schema.graphql), handlers are in `src/mappings`, and
+network-specific decoding overrides are in `chainTypes`. `yarn codegen` generates models
+under `src/types`; `yarn build` writes the mapping and chaintypes bundles to `dist`.
 
 ## Indexing and Query
 
 #### Run required systems in docker
 
-Under the project directory run following command:
+After generating types and building the project, select a network and start the local stack:
 
+```bash
+export PROJECT_PATH=polkadot-ah.yaml
+yarn start:docker
 ```
-docker-compose pull && docker-compose up
+
+The scripts pass `--env-file versions.env` to Compose. For direct Compose commands,
+use the same option:
+
+```bash
+docker-compose --env-file versions.env up --remove-orphans
 ```
+
+`bash local-runner.sh polkadot-ah.yaml` installs dependencies, builds and starts the stack.
+It preserves `.data/postgres` and the indexer's existing checkpoint. When selecting a
+different network, use a separate `DB_SCHEMA`, for example
+`DB_SCHEMA=kusama_ah bash local-runner.sh kusama-ah.yaml`; both the indexer and query
+service use that schema. The default remains `app` for existing local databases.
+
+### Runtime Images
+
+[versions.env](versions.env) supplies image defaults to Compose and both CI workflows.
+`NODE_IMAGE` selects build tooling, `SUBQL_NODE_IMAGE` the local indexer runtime, and
+`SUBQL_PRODUCTION_IMAGE` the production base image. All runtime defaults derive from
+`SUBQL_NODE_VERSION`; existing environment overrides take precedence.
+
+Build a production image from the repository root:
+
+```bash
+source versions.env
+docker build -f docker/subql-node-Dockerfile \
+  --build-arg NODE_IMAGE="$NODE_IMAGE" \
+  --build-arg SUBQL_NODE_IMAGE="$SUBQL_PRODUCTION_IMAGE" \
+  -t subquery-governance:local .
+```
+
+These build arguments are required. `.dockerignore` excludes local databases, VCS data,
+caches and generated files; dependencies, models and bundles are rebuilt inside the image.
+The Docker workflow supports `workflow_dispatch` to build and publish a selected branch
+before merging. Automatic publication remains enabled for `master`, `dev` and version tags.
+
+### Asset Hub v5 Recovery
+
+The shared decoder in [chainTypes/assetHubExtrinsic.ts](chainTypes/assetHubExtrinsic.ts)
+reads General-v5 transaction extensions from runtime metadata and is registered for all
+three Asset Hubs. It exposes signed origins while preserving encoded bytes and hashes;
+v4 and bare-v5 extrinsics use the standard codec. The implementation follows
+[accounts PR #97](https://github.com/novasamatech/subquery-accounts/pull/97).
+
+For the Polkadot Asset Hub failure at block `20494727` (`Invalid data passed to Mortal era`),
+deploy an image containing the rebuilt chaintypes and resume the existing checkpoint.
+Fetching failed before indexing this block, so recovery does not require skipping it or
+clearing the database. A dictionary HTTP 503 is a separate endpoint failure. Updating
+project dependencies alone does not change the decoder bundled in the runtime image.
 
 #### Query the project
 
@@ -86,16 +89,17 @@ Open your browser and head to `http://localhost:3000`.
 
 Finally, you should see a GraphQL playground is showing in the explorer and the schemas that ready to query.
 
-For the `subql-starter` project, you can try to query with the following code to get a taste of how it works.
+For example, query indexed delegates:
 
 ```graphql
 {
   query {
-    starterEntities(first: 10) {
+    delegates(first: 10) {
       nodes {
-        field1
-        field2
-        field3
+        id
+        accountId
+        delegators
+        delegatorVotes
       }
     }
   }
